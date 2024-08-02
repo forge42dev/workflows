@@ -170,6 +170,7 @@ jobs:
           # Import secrets if any
           echo "::group::Set the fly secrets if any are set"
           if [ -n "${{ secrets.fly_secrets }}" ]; then
+            echo '${{ secrets.fly_secrets }}' | tr " " "\n"
             echo '${{ secrets.fly_secrets }}' | tr " " "\n" | flyctl secrets import --stage --app "$app_normalized_name";
           else
             echo "No secrets to import!";
@@ -179,7 +180,7 @@ jobs:
           # Deploy/Update the app
           echo "::group::Deploy the app to fly.io"
           retry 5 4 flyctl deploy \
-            --config "$workspace_path/fly.${{ inputs.app_stage }}.toml" \
+            --config "$absolute_workspace_path/fly.${{ inputs.app_stage }}.toml" \
             --app "$app_normalized_name" \
             --build-arg "GIT_SHA=$git_sha" \
             --remote-only \
