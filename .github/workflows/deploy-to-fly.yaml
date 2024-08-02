@@ -7,6 +7,9 @@ concurrency:
 on:
   workflow_call:
     outputs:
+      app_name:
+        value: ${{ jobs.deploy.outputs.app_name }}
+        description: "The name of the deployed app"
       app_url:
         value: ${{ jobs.deploy.outputs.app_url }}
         description: "The url of the deployed app"
@@ -16,7 +19,8 @@ on:
 
     inputs:
       app_name:
-        required: true
+        required: false
+        default: ${{ github.repository }}
         type: string
         description: "The name of the workspace to deploy. This will be used to find the workspace path and app name"
       github_environment:
@@ -51,7 +55,6 @@ on:
         required: true
         description: "The Fly API token"
 
-
 env:
   FLY_API_TOKEN: ${{ secrets.fly_api_token }}
 
@@ -61,6 +64,7 @@ jobs:
     name: "${{ inputs.github_environment }}"
     runs-on: ubuntu-latest
     outputs:
+      app_name: ${{ steps.fly_deploy.outputs.app_name }}
       app_url: ${{ steps.fly_deploy.outputs.app_url }}
       app_normalized_name: ${{ steps.fly_deploy.outputs.app_normalized_name }}
     environment:
@@ -107,6 +111,7 @@ jobs:
 
           shopt -s globstar
 
+          echo "::group::Prepare variables needed for deployment"
           # Get the absolute path of the workspace.
           # e.g. '/path/to/monorepo/apps/external/the-workspace'
           workspace_path="$(grep -rls '"name":.*"${{ inputs.app_name }}"' **/package.json | xargs -I {} dirname {})"
@@ -123,35 +128,43 @@ jobs:
           echo "absolute_workspace_path=$absolute_workspace_path"
           echo "workspace_path=$workspace_path" >> $GITHUB_OUTPUT
 
-          github_event_name="${{ github.event_name }}" # pull_request, push, etc
-          if [ "$github_event_name" == "pull_request" ]; then
-            git_sha="$(git rev-parse --short ${{github.event.pull_request.head.sha}})"
-            app_name="${{ github.repository }}-${{ inputs.app_name }}-pr${{ github.event.number }}"
-          elif [ "$github_event_name" == "push" ]; then
-            git_sha="$(git rev-parse --short $GITHUB_SHA)"
-            app_name="${{ github.repository }}-${{ inputs.app_name }}-${{ github.ref_type }}-${{ github.ref_name }}"
+          if [ -z "${{ inputs.app_name }}" ]; then
+            app_name="${{ github.repository }}"
           else
+            app_name="${{ inputs.app_name }}"
+          fi
+          echo "app_name=$app_name"
+          echo "app_name=$app_name" >> $GITHUB_OUTPUT
+
+
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            git_sha="$(git rev-parse --short ${{github.event.pull_request.head.sha}})"
+          else [ "${{ github.event_name }}" == "push" ]; then
             git_sha="$(git rev-parse --short $GITHUB_SHA)"
-            app_name="${{ github.repository }}-${{ inputs.app_name }}-${{ github.ref_name }}"
           fi
 
+          echo "git_sha=$git_sha"
+          echo "git_sha=$git_sha" >> $GITHUB_OUTPUT
+
           # Get the app name, replaces '/' and '.' with '-', everything else gets removed to make it url friendly
-          # e.g. 'cvmaker-BV/monorepo-stack_@some_WORKSPACE?foo=bar' => 'cvmaker-bv-monorepo-stack-some-workspacefoobar'
+          # e.g. 'octo-CAT/monorepo-stack_@some_WORKSPACE?foo=bar' => 'octo-cat-monorepo-stack-some-workspacefoobar'
           app_normalized_name="$(echo $app_name | sed 's/[\.\/_]/-/g; s/[^a-zA-Z0-9-]//g' | tr '[:upper:]' '[:lower:]')"
 
           # Set the app name as an github output
           echo "app_normalized_name=$app_normalized_name"
           echo "app_normalized_name=$app_normalized_name" >> $GITHUB_OUTPUT
 
+          echo "::endgroup::"
+
           # Check if the app already exists, if not, create it
-          echo "::group::Fly Status"
+          echo "::group::Check if fly app exists"
           if ! flyctl status --app "$app_normalized_name"; then
             retry 5 4 flyctl apps create "$app_normalized_name" --org "${{ inputs.fly_org }}"
           fi
           echo "::endgroup::"
 
           # Import secrets if any
-          echo "::group::Fly Secrets"
+          echo "::group::Set the fly secrets if any are set"
           if [ -n "${{ secrets.fly_secrets }}" ]; then
             echo '${{ secrets.fly_secrets }}' | tr " " "\n" | flyctl secrets import --stage --app "$app_normalized_name";
           else
@@ -160,7 +173,7 @@ jobs:
           echo "::endgroup::"
 
           # Deploy/Update the app
-          echo "::group::Fly Deploy"
+          echo "::group::Deploy the app to fly.io"
           retry 5 4 flyctl deploy \
             --config "$workspace_path/fly.${{ inputs.app_stage }}.toml" \
             --app "$app_normalized_name" \
@@ -171,11 +184,13 @@ jobs:
           echo "::endgroup::"
 
           # Get the app url
+          echo "::group::Get the app url"
           app_url="https://$(flyctl status --app "$app_normalized_name" --json | jq -rS '.Hostname')/"
 
           # Set the app url as an github output
           echo "app_url=$app_url"
           echo "app_url=$app_url" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
 
           echo "### Deployed ${{ inputs.app_name }} :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
