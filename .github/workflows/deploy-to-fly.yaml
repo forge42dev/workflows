@@ -82,6 +82,8 @@ jobs:
       - id: fly_deploy
         name: "Deploy ${{ inputs.app_name }} to fly.io"
         run: |
+          # Deploy the app to fly.io
+
           # Exponential backoff retry function
           # retry <retries> <base sleep time in seconds> <command...>
           function retry {
@@ -112,29 +114,33 @@ jobs:
           shopt -s globstar
 
           echo "::group::Prepare variables needed for deployment"
-          # Get the absolute path of the workspace.
-          # e.g. '/path/to/monorepo/apps/external/the-workspace'
-          workspace_path="$(grep -rls '"name":.*"${{ inputs.app_name }}"' **/package.json | xargs -I {} dirname {})"
-          absolute_workspace_path="$(pwd)/$workspace_path"
-
-          # If no workspace is found, exit with an error
-          if [ -z "$workspace_path" ]; then
-            echo "No workspace with name '${{ inputs.app_name }}' found.";
-            exit 1;
-          fi
-
-          # Set the workspace path as an github output
-          echo "workspace_path=$workspace_path"
-          echo "absolute_workspace_path=$absolute_workspace_path"
-          echo "workspace_path=$workspace_path" >> $GITHUB_OUTPUT
 
           if [ -z "${{ inputs.app_name }}" ]; then
             app_name="${{ github.repository }}"
+            # Get the absolute path of the workspace.
+            # e.g. '/path/to/monorepo/apps/external/the-workspace'
+            workspace_path=""
+            absolute_workspace_path="$(pwd)/$workspace_path"
           else
             app_name="${{ inputs.app_name }}"
+            # Get the absolute path of the workspace.
+            # e.g. '/path/to/monorepo/apps/external/the-workspace'
+            workspace_path="$(grep -rls '"name":.*"${{ inputs.app_name }}"' **/package.json | xargs -I {} dirname {})"
+            absolute_workspace_path="$(pwd)/$workspace_path"
+            # If no workspace is found, exit with an error
+            if [ -z "$workspace_path" ]; then
+              echo "No workspace with name '${{ inputs.app_name }}' found.";
+              exit 1;
+            fi
           fi
+
           echo "app_name=$app_name"
           echo "app_name=$app_name" >> $GITHUB_OUTPUT
+
+          echo "absolute_workspace_path=$absolute_workspace_path"
+
+          echo "workspace_path=$workspace_path"
+          echo "workspace_path=$workspace_path" >> $GITHUB_OUTPUT
 
 
           if [ "${{ github.event_name }}" == "pull_request" ]; then
