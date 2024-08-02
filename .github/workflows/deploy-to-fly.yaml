@@ -20,7 +20,6 @@ on:
     inputs:
       app_name:
         required: false
-        default: ${{ github.repository }}
         type: string
         description: "The name of the workspace to deploy. This will be used to find the workspace path and app name"
       github_environment:
