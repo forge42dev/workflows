@@ -117,8 +117,8 @@ jobs:
             app_name="${{ github.repository }}"
             # Get the absolute path of the workspace.
             # e.g. '/path/to/monorepo/apps/external/the-workspace'
-            workspace_path=""
-            absolute_workspace_path="$(pwd)/$workspace_path"
+            workspace_path="./"
+            absolute_workspace_path="$(dirname "$(pwd)/$workspace_path")"
           else
             app_name="${{ inputs.app_name }}"
             # Get the absolute path of the workspace.
