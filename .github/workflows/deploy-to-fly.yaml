@@ -79,7 +79,6 @@ jobs:
           fetch-depth: 2
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - id: fly_deploy
-        name: "Deploy ${{ inputs.app_name }} to fly.io"
         run: |
           # Deploy the app to fly.io
 
