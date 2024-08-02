@@ -170,7 +170,7 @@ jobs:
           # Import secrets if any
           echo "::group::Set the fly secrets if any are set"
           if [ -n "${{ secrets.fly_secrets }}" ]; then
-            echo '${{ secrets.fly_secrets }}' | tr " " "\n"
+            echo 'fly_secrets=${{ secrets.fly_secrets }}'
             echo '${{ secrets.fly_secrets }}' | tr " " "\n" | flyctl secrets import --stage --app "$app_normalized_name";
           else
             echo "No secrets to import!";
