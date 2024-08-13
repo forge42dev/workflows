@@ -89,23 +89,34 @@ jobs:
             shift
             local base=$1
             shift
+            local group_name=$1
+            shift
 
             local count=0
-            echo "Try: $@"
+
+            echo "::group::Try '$@' '$group_name'"
+
             until "$@"; do
               exit=$?
+
+              echo "::warning::'$@' '$group_name' ($count/$retries) exited with '$exit'."
 
               count=$(($count + 1))
               wait=$(($base ** $count))
 
               if [ $count -lt $retries ]; then
-                echo "Retry $count/$retries exited $exit, retrying in $wait seconds..."
+                echo "::endgroup::"
+
+                echo "::group::Retry '$@' '$group_name' ($count/$retries)"
+                echo "::notice::Retrying in $wait seconds..."
                 sleep $wait
               else
                 echo "Retry $count/$retries exited $exit, no more retries left."
+                echo "::endgroup::"
                 return $exit
               fi
             done
+            echo "::endgroup::"
             return 0
           }
 
@@ -115,8 +126,7 @@ jobs:
 
           if [ -z "${{ inputs.app_name }}" ]; then
             app_name="${{ github.repository }}"
-            # Get the absolute path of the workspace.
-            # e.g. '/path/to/monorepo/apps/external/the-workspace'
+            # If the app name is not set, the absolute path of the workspace is the current directory
             workspace_path="./"
             absolute_workspace_path="$(dirname "$(pwd)/$workspace_path")"
           else
@@ -127,17 +137,17 @@ jobs:
             absolute_workspace_path="$(pwd)/$workspace_path"
             # If no workspace is found, exit with an error
             if [ -z "$workspace_path" ]; then
-              echo "No workspace with name '${{ inputs.app_name }}' found.";
+              echo "::error::No workspace with name '${{ inputs.app_name }}' found.";
               exit 1;
             fi
           fi
 
-          echo "app_name=$app_name"
+          echo "::notice::app_name=$app_name"
           echo "app_name=$app_name" >> $GITHUB_OUTPUT
 
-          echo "absolute_workspace_path=$absolute_workspace_path"
+          echo "::notice::absolute_workspace_path=$absolute_workspace_path"
 
-          echo "workspace_path=$workspace_path"
+          echo "::notice::workspace_path=$workspace_path"
           echo "workspace_path=$workspace_path" >> $GITHUB_OUTPUT
 
 
@@ -147,7 +157,7 @@ jobs:
             git_sha="$(git rev-parse --short $GITHUB_SHA)"
           fi
 
-          echo "git_sha=$git_sha"
+          echo "::notice::git_sha=$git_sha"
           echo "git_sha=$git_sha" >> $GITHUB_OUTPUT
 
           # Get the app name, replaces '/' and '.' with '-', everything else gets removed to make it url friendly
@@ -155,45 +165,42 @@ jobs:
           app_normalized_name="$(echo $app_name | sed 's/[\.\/_]/-/g; s/[^a-zA-Z0-9-]//g' | tr '[:upper:]' '[:lower:]')"
 
           # Set the app name as an github output
-          echo "app_normalized_name=$app_normalized_name"
+          echo "::notice::app_normalized_name=$app_normalized_name"
           echo "app_normalized_name=$app_normalized_name" >> $GITHUB_OUTPUT
 
           echo "::endgroup::"
 
           # Check if the app already exists, if not, create it
-          echo "::group::Check if fly app exists"
+
           if ! flyctl status --app "$app_normalized_name"; then
-            retry 5 4 flyctl apps create "$app_normalized_name" --org "${{ inputs.fly_org }}"
+            retry 5 4 "Check if fly app exists" flyctl apps create "$app_normalized_name" --org "${{ inputs.fly_org }}"
           fi
-          echo "::endgroup::"
 
           # Import secrets if any
           echo "::group::Set the fly secrets if any are set"
           if [ -n "${{ secrets.fly_secrets }}" ]; then
-            echo 'fly_secrets=${{ secrets.fly_secrets }}'
+            echo '::notice::fly_secrets=${{ secrets.fly_secrets }}'
             echo '${{ secrets.fly_secrets }}' | tr " " "\n" | flyctl secrets import --stage --app "$app_normalized_name";
           else
-            echo "No secrets to import!";
+            echo "::warning::No secrets to import!";
           fi
           echo "::endgroup::"
 
           # Deploy/Update the app
-          echo "::group::Deploy the app to fly.io"
-          retry 5 4 flyctl deploy \
+          retry 5 4 "Deploy the app to fly.io" flyctl deploy \
             --config "$absolute_workspace_path/fly.${{ inputs.app_stage }}.toml" \
             --app "$app_normalized_name" \
             --build-arg "GIT_SHA=$git_sha" \
             --remote-only \
             --now \
             --yes
-          echo "::endgroup::"
 
           # Get the app url
           echo "::group::Get the app url"
           app_url="https://$(flyctl status --app "$app_normalized_name" --json | jq -rS '.Hostname')/"
 
           # Set the app url as an github output
-          echo "app_url=$app_url"
+          echo "::notice::app_url=$app_url"
           echo "app_url=$app_url" >> $GITHUB_OUTPUT
           echo "::endgroup::"
 
