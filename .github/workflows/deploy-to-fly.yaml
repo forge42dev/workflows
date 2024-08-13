@@ -31,6 +31,11 @@ on:
         default: ${{ vars.FLY_ORG }}
         type: string
         description: "The Fly Organization to deploy to"
+      fly_consul_attach:
+        required: false
+        type: boolean
+        description: "Whether to attach a consul cluster to the app. Defaults to false"
+        default: false
       app_stage:
         required: false
         type: string
@@ -199,6 +204,13 @@ jobs:
             echo "::warning::No secrets to import!";
           fi
           echo "::endgroup::"
+
+          # Attach a consul cluster if requested
+          if [ "${{ inputs.fly_consul_attach }}" == "true" ]; then
+            echo "::group::Attaching a consul cluster"
+            retry 5 2 "Attaching a consul cluster" flyctl consul attach --app "$app_normalized_name"
+            echo "::endgroup::"
+          fi
 
           # Deploy/Update the app
           retry 5 2 "Deploy the app to fly.io" flyctl deploy \
