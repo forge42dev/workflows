@@ -92,27 +92,27 @@ jobs:
             local group_name=$1
             shift
 
-            local count=0
+            local count=1
 
-            echo "::group::Try '$@' '$group_name'"
+            echo "::group::Try '$group_name' ($count/$retries)"
+            echo "::notice::Using command: '$@'"
 
             until "$@"; do
               exit=$?
 
-              echo "::warning::'$@' '$group_name' ($count/$retries) exited with '$exit'."
+              echo "::error::'$group_name' ($count/$retries) exited with '$exit'."
+              echo "::endgroup::"
 
               count=$(($count + 1))
               wait=$(($base ** $count))
 
-              if [ $count -lt $retries ]; then
-                echo "::endgroup::"
-
-                echo "::group::Retry '$@' '$group_name' ($count/$retries)"
-                echo "::notice::Retrying in $wait seconds..."
+              if [ $count -le $retries ]; then
+                echo "::notice::Start next retry for '$group_name' ($count/$retries) in '$wait' seconds..."
                 sleep $wait
+                echo "::group::Retry '$group_name' ($count/$retries)"
+                echo "::notice::Using command: '$@'"
               else
-                echo "Retry $count/$retries exited $exit, no more retries left."
-                echo "::endgroup::"
+                echo "::error::No more retries left for '$group_name' ($count/$retries). Exiting with exit code '$exit'."
                 return $exit
               fi
             done
@@ -172,8 +172,14 @@ jobs:
 
           # Check if the app already exists, if not, create it
 
-          if ! flyctl status --app "$app_normalized_name"; then
-            retry 5 4 "Check if fly app exists" flyctl apps create "$app_normalized_name" --org "${{ inputs.fly_org }}"
+          echo "::group::Check if fly app '$app_normalized_name' already exists"
+          flyctl status --app "$app_normalized_name"
+          fly_status=$?
+          echo "::endgroup::"
+
+          if ! $fly_status; then
+            echo "::warning::App '$app_normalized_name' does not exist, creating it..."
+            retry 5 4 "Create fly app '$app_normalized_name'" flyctl apps create "$app_normalized_name" --org "${{ inputs.fly_org }}"
           fi
 
           # Import secrets if any
