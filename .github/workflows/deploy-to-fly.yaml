@@ -207,9 +207,7 @@ jobs:
 
           # Attach a consul cluster if requested
           if [ "${{ inputs.fly_consul_attach }}" == "true" ]; then
-            echo "::group::Attaching a consul cluster"
             retry 5 2 "Attaching a consul cluster" flyctl consul attach --app "$app_normalized_name"
-            echo "::endgroup::"
           fi
 
           # Deploy/Update the app
