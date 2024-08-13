@@ -19,13 +19,18 @@ on:
 
     inputs:
       app_name:
-        required: false
+        required: true
         type: string
-        description: "The name of the workspace to deploy. This will be used to find the workspace path and app name"
+        description: "The name of the fly app to deploy."
       github_environment:
         required: true
         type: string
         description: "The name of the github deployment environment to deploy"
+      fly_config_file_path:
+        required: false
+        type: string
+        description: "The path to the fly config file. Defaults to 'fly.toml'"
+        default: "./fly.toml"
       fly_org:
         required: false
         default: ${{ vars.FLY_ORG }}
@@ -36,11 +41,11 @@ on:
         type: boolean
         description: "Whether to attach a consul cluster to the app. Defaults to false"
         default: false
-      app_stage:
-        required: false
-        type: string
-        description: "The stage of the app which will be deployed. Defaults to 'staging'"
-        default: "staging"
+      # app_stage:
+      #   required: false
+      #   type: string
+      #   description: "The stage of the app which will be deployed. Defaults to 'staging'"
+      #   default: "staging"
       deploy_timeout_minutes:
         required: false
         type: number
@@ -132,31 +137,35 @@ jobs:
 
           echo "::notice::inputs=${{ toJSON(inputs) }}"
 
-          if [ -z "${{ inputs.app_name }}" ]; then
-            app_name="${{ github.repository }}"
-            # If the app name is not set, the absolute path of the workspace is the current directory
-            workspace_path="./"
-            absolute_workspace_path="$(dirname "$(pwd)/$workspace_path")"
-          else
-            app_name="${{ inputs.app_name }}"
-            # Get the absolute path of the workspace.
-            # e.g. '/path/to/monorepo/apps/external/the-workspace'
-            workspace_path="$(grep -rls '"name":.*"${{ inputs.app_name }}"' **/package.json | xargs -I {} dirname {})"
-            absolute_workspace_path="$(pwd)/$workspace_path"
-            # If no workspace is found, exit with an error
-            if [ -z "$workspace_path" ]; then
-              echo "::error::No workspace with name '${{ inputs.app_name }}' found.";
-              exit 1;
-            fi
-          fi
+          # if [ -z "${{ inputs.app_name }}" ]; then
+          #   app_name="${{ github.repository }}"
+          #   # If the app name is not set, the absolute path of the workspace is the current directory
+          #   #workspace_path="./"
+          #   #absolute_workspace_path="$(dirname "$(pwd)/$workspace_path")"
+          # else
+          #   app_name="${{ inputs.app_name }}"
+          #   # Get the absolute path of the workspace.
+          #   # e.g. '/path/to/monorepo/apps/external/the-workspace'
+          #   #workspace_path="$(grep -rls '"name":.*"${{ inputs.app_name }}"' **/package.json | xargs -I {} dirname {})"
+          #   #absolute_workspace_path="$(pwd)/$workspace_path"
+          #   # If no workspace is found, exit with an error
+          #   #if [ -z "$workspace_path" ]; then
+          #   #  echo "::error::No workspace with name '${{ inputs.app_name }}' found.";
+          #   #  exit 1;
+          #   #fi
+          # fi
 
+          app_name="${{ inputs.app_name }}"
           echo "::notice::app_name=$app_name"
           echo "app_name=$app_name" >> $GITHUB_OUTPUT
 
-          echo "::notice::absolute_workspace_path=$absolute_workspace_path"
+          fly_config_file_path="${{ inputs.fly_config_file_path }}"
+          echo "::notice::fly_config_file_path=$fly_config_file_path"
 
-          echo "::notice::workspace_path=$workspace_path"
-          echo "workspace_path=$workspace_path" >> $GITHUB_OUTPUT
+          #echo "::notice::absolute_workspace_path=$absolute_workspace_path"
+
+          #echo "::notice::workspace_path=$workspace_path"
+          #echo "workspace_path=$workspace_path" >> $GITHUB_OUTPUT
 
 
           if [ "${{ github.event_name }}" == "pull_request" ]; then
@@ -212,7 +221,7 @@ jobs:
 
           # Deploy/Update the app
           retry 5 2 "Deploy the app to fly.io" flyctl deploy \
-            --config "$absolute_workspace_path/fly.${{ inputs.app_stage }}.toml" \
+            --config "$fly_config_file_path" \
             --app "$app_normalized_name" \
             --build-arg "GIT_SHA=$git_sha" \
             --remote-only \
