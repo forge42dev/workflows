@@ -173,15 +173,19 @@ jobs:
 
           echo "::endgroup::" # Prepare variables needed for deployment
 
-          # Check if the app already exists, if not, create it
+          # Check if the app already exists, if not, create it.
+          # We want to have that in a separate group, thats the reason why we use status and create
+          # in two separate steps
           echo "::group::Check if fly app '$app_normalized_name' already exists"
-          flyctl status --app "$app_normalized_name"
-          fly_status=$?
+          fly_status=0
+          if ! flyctl status --app "$app_normalized_name"; then
+            fly_status=1
+          fi
           echo "::endgroup::" # Check if fly app already exists
 
           if [ $fly_status -ne 0 ]; then
             echo "::warning::App '$app_normalized_name' does not exist, creating it..."
-            retry 5 4 "Create fly app '$app_normalized_name'" flyctl apps create "$app_normalized_name" --org "${{ inputs.fly_org }}"
+            retry 5 2 "Create fly app '$app_normalized_name'" flyctl apps create "$app_normalized_name" --org "${{ inputs.fly_org }}"
           else
             echo "::notice::App '$app_normalized_name' already exists, skipping creation."
           fi
@@ -197,7 +201,7 @@ jobs:
           echo "::endgroup::"
 
           # Deploy/Update the app
-          retry 5 4 "Deploy the app to fly.io" flyctl deploy \
+          retry 5 2 "Deploy the app to fly.io" flyctl deploy \
             --config "$absolute_workspace_path/fly.${{ inputs.app_stage }}.toml" \
             --app "$app_normalized_name" \
             --build-arg "GIT_SHA=$git_sha" \
