@@ -1,7 +1,7 @@
 name: Deploy to Fly 🪰
 
 concurrency:
-  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}-${{ inputs.app_name }}-${{ inputs.github_environment }}
+  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}-${{ inputs.fly_app_name }}-${{ inputs.github_environment }}
   cancel-in-progress: true
 
 on:
@@ -91,6 +91,9 @@ jobs:
       - id: fly_deploy
         run: |
           # Deploy the app to fly.io
+
+          pwd
+          ls -laR
 
           source scripts/retry
           source scripts/prepare-vars
