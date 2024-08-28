@@ -18,9 +18,9 @@ notice () { echo "::notice::$1"; }
 group "Prepare variables needed for deployment"
 debug "local_dev=$local_dev"
 
-debug_if 'inputs=${{ toJSON(inputs) }}'
+debug_if "inputs=${{ toJSON(inputs) }}"
 
-workspace_name=$(v "$local_workspace_name" '${{ inputs.workspace_name }}')
+workspace_name=$(v "$local_workspace_name" "${{ inputs.workspace_name }}")
 debug "workspace_name=$workspace_name"
 
 if [[ -z "$workspace_name" ]]; then
