@@ -86,6 +86,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: forge42dev/workflows@monorepo-matrix
+          path: .workflows
+      - uses: actions/checkout@v4
+        with:
           fetch-depth: 2
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - id: fly_deploy
@@ -95,8 +99,8 @@ jobs:
           pwd
           ls -laR
 
-          source scripts/retry
-          source scripts/prepare-vars
+          source .workflows/scripts/retry
+          source .workflows/scripts/prepare-vars
 
           shopt -s globstar
 
