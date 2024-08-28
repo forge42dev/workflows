@@ -86,7 +86,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: forge42dev/workflows@monorepo-matrix
+          repository: forge42dev/workflows
+          ref: monorepo-matrix
           path: .workflows
       - uses: actions/checkout@v4
         with:
