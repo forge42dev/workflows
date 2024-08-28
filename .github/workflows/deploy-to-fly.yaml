@@ -99,6 +99,11 @@ jobs:
           source .workflows/scripts/retry
           source .workflows/scripts/prepare-vars
 
+          prepare_vars '${{ toJSON(inputs) }}'
+
+          notice "workspace_path=$workspace_path"
+          notice "workspace_name=$workspace_name"
+
           exit 0
 
           # Check if the app already exists, if not, create it.

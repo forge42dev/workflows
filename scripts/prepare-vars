@@ -3,36 +3,43 @@ echo "HELLO I AM IN PREPARE VARS"
 
 shopt -s globstar
 
-local_dev=false
-local_workspace_name="${WORKSPACE_NAME:-}"
-
-if [[ -z "$LOCAL_DEV" ]]; then local_dev=false; else local_dev=true; fi
-v () { if $local_dev; then echo "$1"; else echo "$2"; fi; }
-debug_if () { if ! $local_dev; then echo "::debug::$1"; fi; }
+# if [[ -z "$LOCAL_DEV" ]]; then local_dev=false; else local_dev=true; fi
+# v () { if $local_dev; then echo "$1"; else echo "$2"; fi; }
 group () { echo "::group::$1"; }
 end_group () { echo "::endgroup::"; }
 debug () { echo "::debug::$1"; }
 notice () { echo "::notice::$1"; }
+warning () { echo "::warning::$1"; }
 
+function prepare_vars () {
+  group "Prepare variables needed for deployment"
+  # The function expects a json string as input, e.g. '{"foo": "bar", "hello": "world"}'.
+  # It will set the local variables with the same name as the json keys, e.g. 'local input_foo="bar"'
+  # This allows you to process the 'input_*' variables first, then set them in the global scope of the script.
+  local input_vars=$(echo "$1" | jq -r 'to_entries | map("local input_\(.key)=\(.value|@sh)") | .[]')
+  eval "$input_vars"
 
-group "Prepare variables needed for deployment"
-debug "local_dev=$local_dev"
+  # We dont set local variables here, because we want to be able to use them in the rest of the script
+  workspace_name=${input_workspace_name:-}
 
-debug_if "inputs=${{ toJSON(inputs) }}"
+  if [[ -z "$workspace_name" ]]; then
+    debug "workspace_name not set, using current directory"
+    workspace_path="."
+    workspace_name="$(jq -rS '.name' package.json)"
+  else
+    workspace_path="$(grep -rls "\"name\":.*\"$workspace_name\"" **/package.json | xargs -I {} dirname {})"
+  fi
 
-workspace_name=$(v "$local_workspace_name" "${{ inputs.workspace_name }}")
-debug "workspace_name=$workspace_name"
+  debug "workspace_name=$workspace_name"
+  debug "workspace_path=$workspace_path"
 
-if [[ -z "$workspace_name" ]]; then
-  debug "workspace_name not set, using current directory"
-  workspace_path="."
-else
-  workspace_path="$(grep -rls "\"name\":.*\"$workspace_name\"" **/package.json | xargs -I {} dirname {})"
-fi
+  end_group
+}
 
-debug "workspace_path=$workspace_path"
-end_group
+prepare_vars "{\"workspace_name\": \"${WORKSPACE_NAME:-}\"}"
 
+echo "workspace_path=$workspace_path"
+echo "workspace_name=$workspace_name"
 
 # if [[ -z "${{ inputs.workspace_name }}" ]]; then
 #   # workspace name not set --> use the current directory
