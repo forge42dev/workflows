@@ -18,8 +18,12 @@ on:
         description: "The name of the deployed app"
 
     inputs:
-      app_name:
-        required: true
+      workspace_name:
+        required: false
+        type: string
+        description: "The name of the workspace to deploy. This is used to find the folder of the workspace by searching name fields in all package.json files."
+      fly_app_name:
+        required: false
         type: string
         description: "The name of the fly app to deploy."
       github_environment:
@@ -29,7 +33,7 @@ on:
       fly_config_file_path:
         required: false
         type: string
-        description: "The path to the fly config file. Defaults to 'fly.toml'"
+        description: "The relative path to the fly config file. Defaults to './fly.toml'"
         default: "./fly.toml"
       fly_org:
         required: false
@@ -41,11 +45,6 @@ on:
         type: boolean
         description: "Whether to attach a consul cluster to the app. Defaults to false"
         default: false
-      # app_stage:
-      #   required: false
-      #   type: string
-      #   description: "The stage of the app which will be deployed. Defaults to 'staging'"
-      #   default: "staging"
       deploy_timeout_minutes:
         required: false
         type: number
@@ -93,49 +92,21 @@ jobs:
         run: |
           # Deploy the app to fly.io
 
-          # Exponential backoff retry function
-          # retry <retries:integer> <base sleep time in seconds:integer> <"group name":string> <command...>
-          function retry {
-            local retries=$1
-            shift
-            local base=$1
-            shift
-            local group_name=$1
-            shift
-
-            local count=1
-
-            echo "::group::Try '$group_name ($count/$retries)'."
-            echo "::notice::Using command: '$@'"
-
-            until "$@"; do
-              exit=$?
-
-              echo "::error::'$group_name ($count/$retries)' exited with '$exit'."
-              echo "::endgroup::"
-
-              count=$(($count + 1))
-              wait=$(($base ** $count))
-
-              if [ $count -le $retries ]; then
-                echo "::notice::Retry '$group_name ($count/$retries)' in '$wait' seconds."
-                sleep $wait
-                echo "::group::Retry '$group_name ($count/$retries)'."
-                echo "::notice::Using command: '$@'"
-              else
-                echo "::error::No more retries left for '$group_name ($count/$retries)'. Exiting with exit code '$exit'."
-                return $exit
-              fi
-            done
-            echo "::endgroup::"
-            return 0
-          }
+          source scripts/retry
+          source scripts/prepare-vars
 
           shopt -s globstar
 
           echo "::group::Prepare variables needed for deployment"
 
           echo "::notice::inputs=${{ toJSON(inputs) }}"
+
+          if [[ -z "${{ inputs.workspace_name }}" ]]; then
+            # workspace name not set --> use the current directory
+            workspace_path="./"
+          else
+            workspace_path="$(grep -rls '"name":.*"${{ inputs.workspace_name }}"' **/package.json | xargs -I {} dirname {})"
+          fi
 
           # if [ -z "${{ inputs.app_name }}" ]; then
           #   app_name="${{ github.repository }}"

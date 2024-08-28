@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+echo "HELLO I AM IN PREPARE VARS"
+
+shopt -s globstar
+
+local_dev=false
+local_workspace_name="${WORKSPACE_NAME:-}"
+
+if [[ -z "$LOCAL_DEV" ]]; then local_dev=false; else local_dev=true; fi
+v () { if $local_dev; then echo "$1"; else echo "$2"; fi; }
+debug_if () { if ! $local_dev; then echo "::debug::$1"; fi; }
+group () { echo "::group::$1"; }
+end_group () { echo "::endgroup::"; }
+debug () { echo "::debug::$1"; }
+notice () { echo "::notice::$1"; }
+
+
+group "Prepare variables needed for deployment"
+debug "local_dev=$local_dev"
+
+debug_if 'inputs=${{ toJSON(inputs) }}'
+
+workspace_name=$(v "$local_workspace_name" '${{ inputs.workspace_name }}')
+debug "workspace_name=$workspace_name"
+
+if [[ -z "$workspace_name" ]]; then
+  debug "workspace_name not set, using current directory"
+  workspace_path="."
+else
+  workspace_path="$(grep -rls "\"name\":.*\"$workspace_name\"" **/package.json | xargs -I {} dirname {})"
+fi
+
+debug "workspace_path=$workspace_path"
+end_group
