@@ -99,7 +99,7 @@ jobs:
           source .workflows/scripts/retry
           source .workflows/scripts/prepare-vars
 
-          prepare_vars '${{ toJSON(inputs) }}' '${{ toJSON(github) }}'
+          prepare_vars '${{ toJSON(inputs) }}' '{ "github": ${{ toJSON(github) }} }'
 
           notice "workspace_path=$workspace_path"
           notice "workspace_name=$workspace_name"
