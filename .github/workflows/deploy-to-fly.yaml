@@ -108,30 +108,28 @@ jobs:
           notice "git_commit_sha=$git_commit_sha"
           notice "git_commit_sha_short=$git_commit_sha_short"
 
-          exit 0
-
           # Check if the app already exists, if not, create it.
           # We want to have that in a separate group, thats the reason why we use status and create
           # in two separate steps
-          echo "::group::Check if fly app '$app_normalized_name' already exists"
+          echo "::group::Check if fly app '$fly_app_name' already exists"
           fly_status=0
-          if ! flyctl status --app "$app_normalized_name"; then
+          if ! flyctl status --app "$fly_app_name"; then
             fly_status=1
           fi
           echo "::endgroup::" # Check if fly app already exists
 
           if [ $fly_status -ne 0 ]; then
-            echo "::warning::App '$app_normalized_name' does not exist, creating it..."
-            retry 5 2 "Create fly app '$app_normalized_name'" flyctl apps create "$app_normalized_name" --org "${{ inputs.fly_org }}"
+            echo "::warning::App '$fly_app_name' does not exist, creating it..."
+            retry 5 2 "Create fly app '$fly_app_name'" flyctl apps create "$fly_app_name" --org "${{ inputs.fly_org }}"
           else
-            echo "::notice::App '$app_normalized_name' already exists, skipping creation."
+            echo "::notice::App '$fly_app_name' already exists, skipping creation."
           fi
 
           # Import secrets if any
           echo "::group::Set the fly secrets if any are set"
           if [ -n "${{ secrets.fly_secrets }}" ]; then
             echo '::notice::fly_secrets=${{ secrets.fly_secrets }}'
-            echo '${{ secrets.fly_secrets }}' | tr " " "\n" | flyctl secrets import --stage --app "$app_normalized_name";
+            echo '${{ secrets.fly_secrets }}' | tr " " "\n" | flyctl secrets import --stage --app "$fly_app_name";
           else
             echo "::warning::No secrets to import!";
           fi
@@ -139,21 +137,21 @@ jobs:
 
           # Attach a consul cluster if requested
           if [ "${{ inputs.fly_consul_attach }}" == "true" ]; then
-            retry 5 2 "Attaching a consul cluster" flyctl consul attach --app "$app_normalized_name"
+            retry 5 2 "Attaching a consul cluster" flyctl consul attach --app "$fly_app_name"
           fi
 
           # Deploy/Update the app
           retry 5 2 "Deploy the app to fly.io" flyctl deploy \
             --config "$fly_config_file_path" \
-            --app "$app_normalized_name" \
-            --build-arg "GIT_SHA=$git_sha" \
+            --app "$fly_app_name" \
+            --build-arg "GIT_SHA=$git_commit_sha_short" \
             --remote-only \
             --now \
             --yes
 
           # Get the app url
           echo "::group::Get the app url"
-          app_url="https://$(flyctl status --app "$app_normalized_name" --json | jq -rS '.Hostname')/"
+          app_url="https://$(flyctl status --app "$fly_app_name" --json | jq -rS '.Hostname')/"
 
           # Set the app url as an github output
           echo "::notice::app_url=$app_url"

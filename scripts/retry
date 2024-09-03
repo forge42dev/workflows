@@ -1,7 +1,5 @@
 #/usr/bin/env bash
 
-echo "HELLO I AM IN RETRY"
-
 # Exponential backoff retry function
 # retry <retries:integer> <base sleep time in seconds:integer> <"group name":string> <command...>
 function retry {
