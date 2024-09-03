@@ -99,7 +99,7 @@ jobs:
           source .workflows/scripts/retry
           source .workflows/scripts/prepare-vars
 
-          prepare_vars '${{ toJSON(inputs) }}' '{ "github": { "repository": "${{ github.repository }}", "event_name": "${{ github.event_name }}", "ref_name": "${{ github.ref_name }}", "ref_type": "${{ github.ref_type }}", "sha": "${{ github.sha }}", "event": ${{ toJSON(github.event) }} } }'
+          prepare_vars '${{ toJSON(inputs) }}' '{ "github": { "repository": "${{ github.repository }}", "event_name": "${{ github.event_name }}", "ref_name": "${{ github.ref_name }}", "ref_type": "${{ github.ref_type }}", "sha": "${{ github.sha }}", "event": { "number": "${{ github.event.number }}", "pull_request": { "head": { "sha": "${{ github.event.pull_request.head.sha }}" } } } } }'
 
           notice "workspace_path=$workspace_path"
           notice "workspace_name=$workspace_name"
