@@ -33,7 +33,7 @@ on:
       fly_config_file_path:
         required: false
         type: string
-        description: "The relative path to the fly config file. Defaults to './fly.toml'"
+        description: "Relative workspace path of the fly config file. Defaults to './fly.toml'"
         default: "./fly.toml"
       fly_org:
         required: false
@@ -99,10 +99,14 @@ jobs:
           source .workflows/scripts/retry
           source .workflows/scripts/prepare-vars
 
-          prepare_vars '${{ toJSON(inputs) }}'
+          prepare_vars '${{ toJSON(inputs) }}' '${{ toJSON(github) }}'
 
           notice "workspace_path=$workspace_path"
           notice "workspace_name=$workspace_name"
+          notice "fly_app_name=$fly_app_name"
+          notice "fly_config_file_path=$fly_config_file_path"
+          notice "git_commit_sha=$git_commit_sha"
+          notice "git_commit_sha_short=$git_commit_sha_short"
 
           exit 0
 

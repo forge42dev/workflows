@@ -1,97 +1,84 @@
 #!/usr/bin/env bash
-echo "HELLO I AM IN PREPARE VARS"
-
 shopt -s globstar
 
-# if [[ -z "$LOCAL_DEV" ]]; then local_dev=false; else local_dev=true; fi
-# v () { if $local_dev; then echo "$1"; else echo "$2"; fi; }
 group () { echo "::group::$1"; }
 end_group () { echo "::endgroup::"; }
 debug () { echo "::debug::$1"; }
 notice () { echo "::notice::$1"; }
 warning () { echo "::warning::$1"; }
+error () { echo "::error::$1"; }
 
 function prepare_vars () {
   group "Prepare variables needed for deployment"
+
   # The function expects a json string as input, e.g. '{"foo": "bar", "hello": "world"}'.
-  # It will set the local variables with the same name as the json keys, e.g. 'local input_foo="bar"'
-  # This allows you to process the 'input_*' variables first, then set them in the global scope of the script.
-  local input_vars=$(echo "$1" | jq -r 'to_entries | map("local input_\(.key)=\(.value|@sh)") | .[]')
-  eval "$input_vars"
+  # It will set the local variables with the same name as the json keys, e.g. 'local inputs_foo="bar"'
+  # This allows you to process the 'inputs_*' variables first, then set them in the global scope of the script.
+  local inputs_vars=$(echo "$1" | jq -r 'to_entries | map("local inputs_\(.key)=\(.value);") | .[]')
+  eval "$inputs_vars"
+  debug "$inputs_vars"
 
-  # We dont set local variables here, because we want to be able to use them in the rest of the script
-  workspace_name=${input_workspace_name:-}
+  local prepped_github_context_vars=$(echo "$2" | jq -r '.github | paths(scalars) as $p | [($p|map(tostring)|join("_")), getpath($p)] | { (.[0]): .[1] }' | jq -s 'add')
+  local github_context_vars=$(echo "$prepped_github_context_vars" | jq -r '. | to_entries | map("local github_\(.key)=\(.value);") | .[]')
+  eval "$github_context_vars"
+  debug "$github_context_vars"
 
-  if [[ -z "$workspace_name" ]]; then
-    debug "workspace_name not set, using current directory"
-    workspace_path="."
-    workspace_name="$(jq -rS '.name' package.json)"
+  if [[ -z "$inputs_workspace_name" ]]; then
+    debug "workspace_name not set. Using current directory as workspace_path and 'name' from ./package.json as workspace_name"
+    workspace_path="$(pwd)"
+    workspace_name="$(jq -rS '.name' ./package.json)"
   else
-    workspace_path="$(grep -rls "\"name\":.*\"$workspace_name\"" **/package.json | xargs -I {} dirname {})"
+    local found_workspace="$(grep -rls "\"name\":.*\"$inputs_workspace_name\"" **/package.json | xargs -I {} dirname {})"
+    if [ -z "$found_workspace" ]; then
+      error "No workspace with name '$inputs_workspace_name' found."
+      exit 1
+    fi
+    workspace_path="$(cd "$found_workspace" && pwd)"
+    workspace_name="$inputs_workspace_name"
   fi
 
   debug "workspace_name=$workspace_name"
   debug "workspace_path=$workspace_path"
 
+  if [[ "$github_event_name" == "pull_request" ]]; then
+    local default_fly_app_name="${github_repository}-${workspace_name}-pr${github_event_number}"
+  elif [[ "$github_event_name" == "push" || "$github_event_name" == "create" ]]; then
+    local default_fly_app_name="${github_repository}-${workspace_name}-${github_ref_type}-${github_ref_name}"
+  fi
+
+  local raw_fly_app_name=${inputs_fly_app_name:-$default_fly_app_name}
+  if [[ -z "$raw_fly_app_name" ]]; then
+    error "Default for 'fly_app_name' could not be generated for github event '$github_event_name'. Please set 'fly_app_name' in the input."
+    exit 1
+  fi
+
+  fly_app_name="$(echo $raw_fly_app_name | sed 's/[\.\/_]/-/g; s/[^a-zA-Z0-9-]//g' | tr '[:upper:]' '[:lower:]')"
+  debug "fly_app_name=$fly_app_name"
+
+  if [[ -z "$inputs_fly_config_file_path" ]]; then
+    debug "fly_config_file_path NOT set. Using workspace_path='$workspace_path' and 'fly.toml' as default"
+    local raw_fly_config_file_path="$workspace_path/fly.toml"
+  else
+    debug "fly_config_file_path set. Using workspace_path='$workspace_path' and '$inputs_fly_config_file_path' as default"
+    local raw_fly_config_file_path="$workspace_path/$inputs_fly_config_file_path"
+  fi
+
+  fly_config_file_path="$(realpath -q "$raw_fly_config_file_path")"
+  if [[ $? -ne 0 ]]; then
+    error "Could not resolve fly_config_file_path: '$raw_fly_config_file_path'"
+    exit 1
+  fi
+  debug "fly_config_file_path=$fly_config_file_path"
+
+  if [ "$github_event_name" == "pull_request" ]; then
+    git_commit_sha="$github_event_pull_request_head_sha"
+  else
+    git_commit_sha="$github_sha"
+  fi
+  debug "git_commit_sha=$git_commit_sha"
+
+  git_commit_sha_short="$(git rev-parse --short $git_commit_sha)"
+  debug "git_commit_sha_short=$git_commit_sha_short"
+
   end_group
 }
-
-prepare_vars "{\"workspace_name\": \"${WORKSPACE_NAME:-}\"}"
-
-echo "workspace_path=$workspace_path"
-echo "workspace_name=$workspace_name"
-
-# if [[ -z "${{ inputs.workspace_name }}" ]]; then
-#   # workspace name not set --> use the current directory
-#   workspace_path="./"
-# else
-#   workspace_path="$(grep -rls '"name":.*"${{ inputs.workspace_name }}"' **/package.json | xargs -I {} dirname {})"
-# fi
-
-# # if [ -z "${{ inputs.app_name }}" ]; then
-# #   app_name="${{ github.repository }}"
-# #   # If the app name is not set, the absolute path of the workspace is the current directory
-# #   #workspace_path="./"
-# #   #absolute_workspace_path="$(dirname "$(pwd)/$workspace_path")"
-# # else
-# #   app_name="${{ inputs.app_name }}"
-# #   # Get the absolute path of the workspace.
-# #   # e.g. '/path/to/monorepo/apps/external/the-workspace'
-# #   #workspace_path="$(grep -rls '"name":.*"${{ inputs.app_name }}"' **/package.json | xargs -I {} dirname {})"
-# #   #absolute_workspace_path="$(pwd)/$workspace_path"
-# #   # If no workspace is found, exit with an error
-# #   #if [ -z "$workspace_path" ]; then
-# #   #  echo "::error::No workspace with name '${{ inputs.app_name }}' found.";
-# #   #  exit 1;
-# #   #fi
-# # fi
-
-# app_name="${{ inputs.app_name }}"
-# echo "::notice::app_name=$app_name"
-# echo "app_name=$app_name" >> $GITHUB_OUTPUT
-
-# fly_config_file_path="${{ inputs.fly_config_file_path }}"
-# echo "::notice::fly_config_file_path=$fly_config_file_path"
-
-# #echo "::notice::absolute_workspace_path=$absolute_workspace_path"
-
-# #echo "::notice::workspace_path=$workspace_path"
-# #echo "workspace_path=$workspace_path" >> $GITHUB_OUTPUT
-
-
-# if [ "${{ github.event_name }}" == "pull_request" ]; then
-#   git_sha="$(git rev-parse --short ${{github.event.pull_request.head.sha}})"
-# else
-#   git_sha="$(git rev-parse --short $GITHUB_SHA)"
-# fi
-
-# echo "::notice::git_sha=$git_sha"
-# echo "git_sha=$git_sha" >> $GITHUB_OUTPUT
-
-# # Get the app name, replaces '/' and '.' with '-', everything else gets removed to make it url friendly
-# # e.g. 'octo-CAT/monorepo-stack_@some_WORKSPACE?foo=bar' => 'octo-cat-monorepo-stack-some-workspacefoobar'
-# app_normalized_name="$(echo $app_name | sed 's/[\.\/_]/-/g; s/[^a-zA-Z0-9-]//g' | tr '[:upper:]' '[:lower:]')"
-
-# # Set the app name as an github output
-# echo "::notice::app_normalized_name=$app_normalized_name"
-# echo "app_normalized_name=$app_normalized_name" >> $GITHUB_OUTPUT
