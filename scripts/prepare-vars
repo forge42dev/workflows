@@ -63,10 +63,8 @@ function prepare_vars () {
     local raw_fly_config_file_path="$workspace_path/$inputs_fly_config_file_path"
   fi
 
-  fly_config_file_path="$(realpath "$raw_fly_config_file_path")"
-  local fly_return_code=$?
-  echo "realpath return: '$fly_return_code'"
-  if [[ $fly_return_code -ne 0 ]]; then
+  fly_config_file_path="$(realpath -e "$raw_fly_config_file_path")"
+  if [[ $? -ne 0 ]]; then
     error "Could not resolve fly_config_file_path: '$raw_fly_config_file_path'"
     exit 1
   fi
