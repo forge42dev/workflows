@@ -25,20 +25,23 @@ function prepare_vars () {
 
   if [[ -z "$inputs_workspace_name" ]]; then
     debug "workspace_name not set. Using current directory as workspace_path and 'name' from ./package.json as workspace_name"
+    workspace_path_relative="."
     workspace_path="$(pwd)"
     workspace_name="$(jq -rS '.name' ./package.json)"
   else
     local found_workspace="$(grep -rls "\"name\":.*\"$inputs_workspace_name\"" **/package.json | xargs -I {} dirname {})"
-    if [ -z "$found_workspace" ]; then
+    if [[ -z "$found_workspace" ]]; then
       error "No workspace with name '$inputs_workspace_name' found."
       exit 1
     fi
+    workspace_path_relative="$found_workspace"
     workspace_path="$(cd "$found_workspace" && pwd)"
     workspace_name="$inputs_workspace_name"
   fi
 
   debug "workspace_name=$workspace_name"
   debug "workspace_path=$workspace_path"
+  debug "workspace_path_relative=$workspace_path_relative"
 
   if [[ "$github_event_name" == "pull_request" ]]; then
     local default_fly_app_name="${github_repository}-${workspace_name}-pr${github_event_number}"

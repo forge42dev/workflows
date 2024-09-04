@@ -16,6 +16,7 @@ echo "---"
 echo
 echo
 echo "workspace_path=$workspace_path"
+echo "workspace_path_relative=$workspace_path_relative"
 echo "workspace_name=$workspace_name"
 echo "fly_app_name=$fly_app_name"
 echo "fly_config_file_path=$fly_config_file_path"

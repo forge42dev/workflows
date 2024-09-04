@@ -102,6 +102,7 @@ jobs:
           prepare_vars '${{ toJSON(inputs) }}' '{ "github": { "repository": "${{ github.repository }}", "event_name": "${{ github.event_name }}", "ref_name": "${{ github.ref_name }}", "ref_type": "${{ github.ref_type }}", "sha": "${{ github.sha }}", "event": { "number": "${{ github.event.number }}", "pull_request": { "head": { "sha": "${{ github.event.pull_request.head.sha }}" } } } } }'
 
           notice "workspace_path=$workspace_path"
+          notice "workspace_path_relative=$workspace_path_relative"
           notice "workspace_name=$workspace_name"
           notice "fly_app_name=$fly_app_name"
           notice "fly_config_file_path=$fly_config_file_path"
@@ -144,7 +145,10 @@ jobs:
           retry 5 2 "Deploy the app to fly.io" flyctl deploy \
             --config "$fly_config_file_path" \
             --app "$fly_app_name" \
-            --build-arg "GIT_SHA=$git_commit_sha_short" \
+            --build-arg "WORKSPACE_NAME=$workspace_name" \
+            --build-arg "WORKSPACE_PATH_RELATIVE=$workspace_path_relative" \
+            --build-arg "GIT_COMMIT_SHA=$git_commit_sha" \
+            --build-arg "GIT_COMMIT_SHA_SHORT=$git_commit_sha_short" \
             --remote-only \
             --now \
             --yes
