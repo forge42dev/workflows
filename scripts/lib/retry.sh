@@ -1,8 +1,6 @@
-#/usr/bin/env bash
-
 # Exponential backoff retry function
 # retry <retries:integer> <base sleep time in seconds:integer> <"group name":string> <command...>
-function retry {
+retry () {
   local retries=$1
   shift
   local base=$1

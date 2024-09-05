@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+__dirname="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+workflow_inputs=$(cat "$__dirname/inputs.json")
+workflow_context=$(cat "$__dirname/context.json")
+
+# order is important here:
+# Make sure to load the workflow inputs and context before loading the fly_deploy.sh
+source "$__dirname/../scripts/fly_deploy.sh"
+
+debug "workflow_inputs=$workflow_inputs"
+debug "workflow_context=$workflow_context"
+echo
+echo
+echo "--- PREPARE VARS"
+prepare_vars "$workflow_inputs" "$workflow_context"
+echo "prepare_vars return code: $?"
+echo "--- PREPARE VARS DONE"
+echo
+echo
+echo "workspace_path=$workspace_path"
+echo "workspace_path_relative=$workspace_path_relative"
+echo "workspace_name=$workspace_name"
+echo "fly_app_name=$fly_app_name"
+echo "fly_config_file_path=$fly_config_file_path"
+echo "git_commit_sha=$git_commit_sha"
+echo "git_commit_sha_short=$git_commit_sha_short"

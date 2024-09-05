@@ -1,0 +1,12 @@
+{
+  "github_repository": "${GITHUB_REPOSITORY:-a-org-42/monorepo}",
+  "github_event_name": "${GITHUB_EVENT_NAME:-pull_request}",
+  "github_ref_name": "${GITHUB_REF_NAME:-feature/foo-bar}",
+  "github_ref_type": "${GITHUB_REF_TYPE:-branch}",
+  "github_sha": "${GITHUB_SHA:=abcde42eee4d0b74fcae7adf4b00a08c9cd9e122}",
+  "github_event_number": "${GITHUB_EVENT_NUMBER:-4242}",
+  "github_event_pull_request_head_sha": "${GITHUB_EVENT_PULL_REQUEST_HEAD_SHA:=abcde42eee4d0b74fcae7adf4b00a08c9cd9e122}",
+  "foo":{
+    "bar":"baz"
+  }
+}
