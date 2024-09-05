@@ -104,6 +104,10 @@ jobs:
           workflow_context='{ "github": { "repository": "${{ github.repository }}", "event_name": "${{ github.event_name }}", "ref_name": "${{ github.ref_name }}", "ref_type": "${{ github.ref_type }}", "sha": "${{ github.sha }}", "event_number": "${{ github.event.number }}", "event_pull_request_head_sha": "${{ github.event.pull_request.head.sha }}" } }'
           prepare_vars "$workflow_inputs" "$workflow_context"
 
+          
+
+
+          exit 0
 
 
           ### DEPLOY scripts go here
