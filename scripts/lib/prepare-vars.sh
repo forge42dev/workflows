@@ -94,5 +94,9 @@ prepare_vars () {
   # Disable globstar again to avoid problems with the ** glob
   shopt -u globstar
 
+  list_assoc_array WORKFLOW_INPUTS
+  list_assoc_array WORKFLOW_CONTEXT
+  list_assoc_array WORKFLOW_SECRETS
+
   end_group
 }
