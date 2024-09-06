@@ -1,3 +1,15 @@
+# This function expects three parameters:
+# 1. The workflow inputs as json string
+# 2. The workflow context as json string
+# 3. The workflow secrets as json string
+# It will flatten and process the JSON object and set global readonly associative arrays:
+# - WORKFLOW_INPUTS
+# - WORKFLOW_CONTEXT
+# - WORKFLOW_SECRETS
+# The keys of the associative arrays are the same as the keys in the JSON.
+# For instance, the following passed json context '{ "github": { "event": { "number": "42" } } }',
+# can be accessed as:
+# echo ${WORKFLOW_CONTEXT["github_event_number"]} # 42
 prepare_vars () {
   group "Prepare variables needed for deployment"
 
@@ -8,26 +20,16 @@ prepare_vars () {
   # It will set the local variables with the same name as the json keys, e.g. 'local inputs_foo="bar"'
   # This allows you to process the 'inputs_*' variables first, then set them in the global scope of the script.
   declare -A WORKFLOW_INPUTS
-  local inputs_vars=$(echo "$1" | jq -r 'to_entries | map("WORKFLOW_INPUTS[\"\(.key)\"]=\"\(.value)\";") | .[]')
-  eval "$inputs_vars"
-  debug "$inputs_vars"
+  json_to_assoc_array WORKFLOW_INPUTS "$1"
   declare -r WORKFLOW_INPUTS
 
   declare -A WORKFLOW_CONTEXT
-  local github_context_vars=$(echo "$2" | jq -r '. | paths(scalars) as $p | [($p|map(tostring)|join("_")), getpath($p)] | { (.[0]): .[1] }' | jq -s 'add' | jq -r '. | to_entries | map("WORKFLOW_CONTEXT[\"\(.key)\"]=\"\(.value)\";") | .[]')
-  eval "$github_context_vars"
-  debug "$github_context_vars"
+  json_to_assoc_array WORKFLOW_CONTEXT "$2"
   declare -r WORKFLOW_CONTEXT
 
-  for elem in "${!WORKFLOW_CONTEXT[@]}"
-  do
-    echo "${elem}: '${WORKFLOW_CONTEXT[${elem}]}'"
-  done
-
-  for elem in "${!WORKFLOW_INPUTS[@]}"
-  do
-    echo "${elem}: '${WORKFLOW_INPUTS[${elem}]}'"
-  done
+  declare -A WORKFLOW_SECRETS
+  json_to_assoc_array WORKFLOW_SECRETS "$3"
+  declare -r WORKFLOW_SECRETS
 
   if [[ -z "${WORKFLOW_INPUTS[workspace_name]}" ]]; then
     notice "workspace_name not set. Using current directory as workspace_path and 'name' from ./package.json as workspace_name"
@@ -56,7 +58,6 @@ prepare_vars () {
   fi
 
   local raw_fly_app_name="${WORKFLOW_INPUTS[fly_app_name]:-$default_fly_app_name}"
-  echo "RAW: $raw_fly_app_name"
   if [[ -z "$raw_fly_app_name" ]]; then
     error "Default for 'fly_app_name' could not be generated for github event '${WORKFLOW_CONTEXT[github_event_name]}'. Please set 'fly_app_name' in the input."
     return 1

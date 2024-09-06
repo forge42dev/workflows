@@ -96,16 +96,32 @@ jobs:
       - id: fly_deploy
         run: |
           # Deploy the app to fly.io
-          # import the scripts
           source .workflows/scripts/fly_deploy.sh
+
+          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
+          echo "GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME"
+          echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
+          echo "GITHUB_REF_TYPE: $GITHUB_REF_TYPE"
+          echo "GITHUB_SHA: $GITHUB_SHA"
+          echo "GITHUB EVENT PATH: $GITHUB_EVENT_PATH"
+          cat $GITHUB_EVENT_PATH | jq
 
           workflow_secrets='${{ toJSON(secrets) }}'
           workflow_inputs='${{ toJSON(inputs) }}'
           workflow_context='{ "github": { "repository": "${{ github.repository }}", "event_name": "${{ github.event_name }}", "ref_name": "${{ github.ref_name }}", "ref_type": "${{ github.ref_type }}", "sha": "${{ github.sha }}", "event_number": "${{ github.event.number }}", "event_pull_request_head_sha": "${{ github.event.pull_request.head.sha }}" } }'
-          prepare_vars "$workflow_inputs" "$workflow_context"
+          prepare_vars "$workflow_inputs" "$workflow_context" "$workflow_secrets"
+          if [ $? -ne 0 ]; then
+            error "prepare_vars failed"
+            exit 1
+          fi
 
-          
-
+          notice "workspace_path=$workspace_path"
+          notice "workspace_path_relative=$workspace_path_relative"
+          notice "workspace_name=$workspace_name"
+          notice "fly_app_name=$fly_app_name"
+          notice "fly_config_file_path=$fly_config_file_path"
+          notice "git_commit_sha=$git_commit_sha"
+          notice "git_commit_sha_short=$git_commit_sha_short"
 
           exit 0
 
