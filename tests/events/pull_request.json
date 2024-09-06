@@ -1,0 +1,8 @@
+{
+  "number": "${GITHUB_EVENT_NUMBER:-4242}",
+  "pull_request": {
+    "head": {
+      "sha": "${GITHUB_EVENT_PULL_REQUEST_HEAD_SHA:=abcde42eee4d0b74fcae7adf4b00a08c9cd9e122}"
+    }
+  }
+}

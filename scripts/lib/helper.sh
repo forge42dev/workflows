@@ -1,5 +1,5 @@
 group () { echo "::group::$1"; }
-end_group () { echo "::endgroup::"; }
+group_end () { echo "::endgroup::"; }
 debug () { echo "::debug::$1"; }
 notice () { echo "::notice::$1"; }
 warning () { echo "::warning::$1"; }

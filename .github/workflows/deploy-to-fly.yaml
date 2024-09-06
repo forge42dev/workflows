@@ -104,24 +104,38 @@ jobs:
           echo "GITHUB_REF_TYPE: $GITHUB_REF_TYPE"
           echo "GITHUB_SHA: $GITHUB_SHA"
           echo "GITHUB EVENT PATH: $GITHUB_EVENT_PATH"
-          cat $GITHUB_EVENT_PATH | jq
 
           workflow_secrets='${{ toJSON(secrets) }}'
           workflow_inputs='${{ toJSON(inputs) }}'
-          workflow_context='{ "github": { "repository": "${{ github.repository }}", "event_name": "${{ github.event_name }}", "ref_name": "${{ github.ref_name }}", "ref_type": "${{ github.ref_type }}", "sha": "${{ github.sha }}", "event_number": "${{ github.event.number }}", "event_pull_request_head_sha": "${{ github.event.pull_request.head.sha }}" } }'
-          prepare_vars "$workflow_inputs" "$workflow_context" "$workflow_secrets"
+          workflow_event="$(cat "$GITHUB_EVENT_PATH")"
+
+          echo "--- PREPARE GLOBALS"
+          prepare_globals "$workflow_inputs" "$workflow_secrets" "$workflow_event"
           if [ $? -ne 0 ]; then
-            error "prepare_vars failed"
+            error "prepare_globals failed"
             exit 1
           fi
+          echo "--- PREPARE GLOBALS DONE"
 
-          notice "workspace_path=$workspace_path"
-          notice "workspace_path_relative=$workspace_path_relative"
-          notice "workspace_name=$workspace_name"
-          notice "fly_app_name=$fly_app_name"
-          notice "fly_config_file_path=$fly_config_file_path"
-          notice "git_commit_sha=$git_commit_sha"
-          notice "git_commit_sha_short=$git_commit_sha_short"
+          list_assoc_array WORKFLOW_INPUTS
+          list_assoc_array WORKFLOW_SECRETS
+          list_assoc_array WORKFLOW_EVENT
+
+          echo "--- PREPARE DEPLOY VARS"
+          prepare_deploy_vars
+          if [ $? -ne 0 ]; then
+            error "prepare_deploy_vars failed"
+            exit 1
+          fi
+          echo "--- PREPARE DEPLOY VARS DONE"
+
+          echo "workspace_path=$workspace_path"
+          echo "workspace_path_relative=$workspace_path_relative"
+          echo "workspace_name=$workspace_name"
+          echo "fly_app_name=$fly_app_name"
+          echo "fly_config_file_path=$fly_config_file_path"
+          echo "git_commit_sha=$git_commit_sha"
+          echo "git_commit_sha_short=$git_commit_sha_short"
 
           exit 0
 

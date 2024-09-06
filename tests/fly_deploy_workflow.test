@@ -1,18 +1,41 @@
 #!/usr/bin/env bash
 __dirname="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-a-org-42/monorepo}"
+GITHUB_EVENT_NAME="${GITHUB_EVENT_NAME:-pull_request}"
+GITHUB_REF_NAME="${GITHUB_REF_NAME:-feature/foo-bar}"
+GITHUB_REF_TYPE="${GITHUB_REF_TYPE:-branch}"
+GITHUB_SHA="${GITHUB_SHA:-abcde42eee4d0b74fcae7adf4b00a08c9cd9e122}"
+GITHUB_EVENT_PATH="${GITHUB_EVENT_PATH:-"${__dirname}/events/${GITHUB_EVENT_NAME}.json"}"
+
 workflow_inputs=$(cat "$__dirname/inputs.json")
-workflow_context=$(cat "$__dirname/context.json")
 workflow_secrets=$(cat "$__dirname/secrets.json")
+workflow_event=$(cat "$GITHUB_EVENT_PATH")
 
 # order is important here:
 # Make sure to load the workflow inputs and context before loading the fly_deploy.sh
 source "$__dirname/../scripts/fly_deploy.sh"
 
-echo "--- PREPARE VARS"
-prepare_vars "$workflow_inputs" "$workflow_context" "$workflow_secrets"
-echo "prepare_vars return code: $?"
-echo "--- PREPARE VARS DONE"
-echo
+echo "--- PREPARE GLOBALS"
+prepare_globals "$workflow_inputs" "$workflow_secrets" "$workflow_event"
+if [ $? -ne 0 ]; then
+  error "prepare_globals failed"
+  exit 1
+fi
+echo "--- PREPARE GLOBALS DONE"
+
+list_assoc_array WORKFLOW_INPUTS
+list_assoc_array WORKFLOW_SECRETS
+list_assoc_array WORKFLOW_EVENT
+
+echo "--- PREPARE DEPLOY VARS"
+prepare_deploy_vars
+if [ $? -ne 0 ]; then
+  error "prepare_deploy_vars failed"
+  exit 1
+fi
+echo "--- PREPARE DEPLOY VARS DONE"
+
 echo "workspace_path=$workspace_path"
 echo "workspace_path_relative=$workspace_path_relative"
 echo "workspace_name=$workspace_name"
