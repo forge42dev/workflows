@@ -40,18 +40,18 @@ prepare_deploy_vars () {
 
   if [[ -z "${WORKFLOW_INPUTS[workspace_name]}" ]]; then
     notice "workspace_name not set. Using current directory as workspace_path and 'name' from ./package.json as workspace_name"
-    workspace_path_relative="."
-    workspace_path="$(pwd)"
-    workspace_name="$(jq -rS '.name' ./package.json)"
+    local workspace_path_relative="."
+    local workspace_path="$(pwd)"
+    local workspace_name="$(jq -rS '.name' ./package.json)"
   else
     local found_workspace="$(grep -rls "\"name\":.*\"${WORKFLOW_INPUTS[workspace_name]}\"" **/package.json | xargs -I {} dirname {})"
     if [[ -z "$found_workspace" ]]; then
       error "No workspace with name '${WORKFLOW_INPUTS[workspace_name]}' found."
       return 1
     fi
-    workspace_path_relative="$found_workspace"
-    workspace_path="$(cd "$found_workspace" && pwd)"
-    workspace_name="${WORKFLOW_INPUTS[workspace_name]}"
+    local workspace_path_relative="$found_workspace"
+    local workspace_path="$(cd "$found_workspace" && pwd)"
+    local workspace_name="${WORKFLOW_INPUTS[workspace_name]}"
   fi
 
   debug "workspace_name=$workspace_name"
@@ -72,7 +72,7 @@ prepare_deploy_vars () {
     return 1
   fi
 
-  fly_app_name="$(echo $raw_fly_app_name | sed 's/[\.\/_]/-/g; s/[^a-zA-Z0-9-]//g' | tr '[:upper:]' '[:lower:]')"
+  local fly_app_name="$(echo $raw_fly_app_name | sed 's/[\.\/_]/-/g; s/[^a-zA-Z0-9-]//g' | tr '[:upper:]' '[:lower:]')"
   debug "fly_app_name=$fly_app_name"
 
   if [[ -z "${WORKFLOW_INPUTS[fly_config_file_path]}" ]]; then
@@ -82,7 +82,7 @@ prepare_deploy_vars () {
     local raw_fly_config_file_path="$workspace_path/${WORKFLOW_INPUTS[fly_config_file_path]}"
   fi
 
-  fly_config_file_path="$(realpath -e "$raw_fly_config_file_path")"
+  local fly_config_file_path="$(realpath -e "$raw_fly_config_file_path")"
   if [[ $? -ne 0 ]]; then
     error "Could not resolve fly_config_file_path: '$raw_fly_config_file_path'"
     return 1
@@ -90,17 +90,33 @@ prepare_deploy_vars () {
   debug "fly_config_file_path=$fly_config_file_path"
 
   if [ "${GITHUB_EVENT_NAME}" == "pull_request" ]; then
-    git_commit_sha="${WORKFLOW_EVENT[pull_request_head_sha]}"
+    local git_commit_sha="${WORKFLOW_EVENT[pull_request_head_sha]}"
   else
-    git_commit_sha="${GITHUB_SHA}"
+    local git_commit_sha="${GITHUB_SHA}"
   fi
   debug "git_commit_sha=$git_commit_sha"
 
-  git_commit_sha_short="$(git rev-parse --short $git_commit_sha)"
+  local git_commit_sha_short="$(git rev-parse --short $git_commit_sha)"
   debug "git_commit_sha_short=$git_commit_sha_short"
 
   # Disable globstar again to avoid problems with the ** glob
   shopt -u globstar
+
+  declare -rg WORKSPACE_NAME="$workspace_name"
+  declare -rg WORKSPACE_PATH="$workspace_path"
+  declare -rg WORKSPACE_PATH_RELATIVE="$workspace_path_relative"
+  declare -rg FLY_APP_NAME="$fly_app_name"
+  declare -rg FLY_CONFIG_FILE_PATH="$fly_config_file_path"
+  declare -rg GIT_COMMIT_SHA="$git_commit_sha"
+  declare -rg GIT_COMMIT_SHA_SHORT="$git_commit_sha_short"
+
+  notice "WORKSPACE_NAME=$WORKSPACE_NAME"
+  notice "WORKSPACE_PATH=$WORKSPACE_PATH"
+  notice "WORKSPACE_PATH_RELATIVE=$WORKSPACE_PATH_RELATIVE"
+  notice "FLY_APP_NAME=$FLY_APP_NAME"
+  notice "FLY_CONFIG_FILE_PATH=$FLY_CONFIG_FILE_PATH"
+  notice "GIT_COMMIT_SHA=$GIT_COMMIT_SHA"
+  notice "GIT_COMMIT_SHA_SHORT=$GIT_COMMIT_SHA_SHORT"
 
   group_end
 }

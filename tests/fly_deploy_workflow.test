@@ -36,10 +36,10 @@ if [ $? -ne 0 ]; then
 fi
 echo "--- PREPARE DEPLOY VARS DONE"
 
-echo "workspace_path=$workspace_path"
-echo "workspace_path_relative=$workspace_path_relative"
-echo "workspace_name=$workspace_name"
-echo "fly_app_name=$fly_app_name"
-echo "fly_config_file_path=$fly_config_file_path"
-echo "git_commit_sha=$git_commit_sha"
-echo "git_commit_sha_short=$git_commit_sha_short"
+echo "WORKSPACE_NAME=$WORKSPACE_NAME"
+echo "WORKSPACE_PATH=$WORKSPACE_PATH"
+echo "WORKSPACE_PATH_RELATIVE=$WORKSPACE_PATH_RELATIVE"
+echo "FLY_APP_NAME=$FLY_APP_NAME"
+echo "FLY_CONFIG_FILE_PATH=$FLY_CONFIG_FILE_PATH"
+echo "GIT_COMMIT_SHA=$GIT_COMMIT_SHA"
+echo "GIT_COMMIT_SHA_SHORT=$GIT_COMMIT_SHA_SHORT"
