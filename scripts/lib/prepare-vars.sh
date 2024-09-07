@@ -99,13 +99,29 @@ prepare_deploy_vars () {
   local git_commit_sha_short="$(git rev-parse --short $git_commit_sha)"
   debug "git_commit_sha_short=$git_commit_sha_short"
 
+  if [[ -z "${WORKFLOW_INPUTS[fly_org]}" ]]; then
+    error "fly_org is not set. Please set 'fly_org' as input."
+    return 1
+  else
+    local fly_org="${WORKFLOW_INPUTS[fly_org]}"
+  fi
+
+  if [[ -z "${WORKFLOW_INPUTS[fly_consul_attach]}" ]]; then
+    error "fly_consul_attach is not set. Please set 'fly_consul_attach' as input."
+    return 1
+  else
+    local fly_consul_attach="${WORKFLOW_INPUTS[fly_consul_attach]}"
+  fi
+
   # Disable globstar again to avoid problems with the ** glob
   shopt -u globstar
 
   declare -rg WORKSPACE_NAME="$workspace_name"
   declare -rg WORKSPACE_PATH="$workspace_path"
   declare -rg WORKSPACE_PATH_RELATIVE="$workspace_path_relative"
+  declare -rg FLY_ORG="$fly_org"
   declare -rg FLY_APP_NAME="$fly_app_name"
+  declare -rg FLY_CONSUL_ATTACH="$fly_consul_attach"
   declare -rg FLY_CONFIG_FILE_PATH="$fly_config_file_path"
   declare -rg GIT_COMMIT_SHA="$git_commit_sha"
   declare -rg GIT_COMMIT_SHA_SHORT="$git_commit_sha_short"

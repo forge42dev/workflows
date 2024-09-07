@@ -22,3 +22,7 @@ json_to_assoc_array () {
   local assoc_array_def=$(echo "$json" | jq -r '. | paths(scalars) as $p | [($p|map(tostring)|join("_")), getpath($p)] | { (.[0]): .[1] }' | jq -rs "add | to_entries | map(\"${assoc_array_name}[\\\"\(.key)\\\"]=\\\"\(.value)\\\";\") | .[]")
   eval "$assoc_array_def"
 }
+
+cleanup () {
+  echo "Cleaning up..."
+}

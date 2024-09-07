@@ -10,28 +10,32 @@ retry () {
 
   local count=1
 
-  echo "::group::Try '$group_name ($count/$retries)'."
-  echo "::notice::Using command: '$@'"
+  group "Try '$group_name ($count/$retries)'."
+  debug "Using command: '$@'"
 
   until "$@"; do
-    exit=$?
+    local exit=$?
 
-    echo "::error::'$group_name ($count/$retries)' exited with '$exit'."
-    echo "::endgroup::"
+    error "'$group_name ($count/$retries)' exited with '$exit'."
+    group_end
 
     count=$(($count + 1))
-    wait=$(($base ** $count))
+    local wait=$(($base ** $count))
 
     if [ $count -le $retries ]; then
-      echo "::notice::Retry '$group_name ($count/$retries)' in '$wait' seconds."
+      warning "Retry '$group_name ($count/$retries)' in '$wait' seconds."
       sleep $wait
-      echo "::group::Retry '$group_name ($count/$retries)'."
-      echo "::notice::Using command: '$@'"
+      group "Retry '$group_name ($count/$retries)'."
+      debug "Using command: '$@'"
     else
-      echo "::error::No more retries left for '$group_name ($count/$retries)'. Exiting with exit code '$exit'."
+      # ($retries/$retries) is not a bug, it is on purpose, since the else branch is executed only if $count is greater than $retries
+      error "No more retries left for '$group_name ($retries/$retries)'. Exiting with exit code '$exit'."
       return $exit
     fi
   done
-  echo "::endgroup::"
+  notice "'$group_name ($count/$retries)' succeeded."
+  
+  group_end
+
   return 0
 }

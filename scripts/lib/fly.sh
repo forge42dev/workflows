@@ -2,73 +2,72 @@
 # We want to have that in a separate group, thats the reason why we use status and create
 # in two separate steps
 fly_app_exists () {
-  group "Check if fly app '$fly_app_name' already exists"
-  local fly_app_name = $1
-  local fly_status=0
-  if ! flyctl status --app "$fly_app_name"; then
-    fly_status=1
-  fi
+  group "Check if fly app '$FLY_APP_NAME' already exists"
+  flyctl status --app "$FLY_APP_NAME" > /dev/null 2>&1
+  local status=$?
   group_end
-  return $fly_status
+  return $status
 }
 
 fly_app_create () {
-  group "Create fly app '$fly_app_name'"
-  local fly_app_name = $1
-  local fly_org = $2
-  if [ $fly_status -ne 0 ]; then
-    warning "App '$fly_app_name' does not exist, creating it..."
-    retry 5 2 "Create fly app '$fly_app_name'" flyctl apps create "$fly_app_name" --org "$fly_org"
+  group "Create fly app '$FLY_APP_NAME' if it does not exist"
+  if ! fly_app_exists; then
+    retry 5 2 "Create fly app '$FLY_APP_NAME'" flyctl apps create "$FLY_APP_NAME" --org "$FLY_ORG"
+    local status=$?
   else
-    notice "App '$fly_app_name' already exists, skipping creation."
+    notice "App '$FLY_APP_NAME' already exists, skipping creation."
+    local status=0
   fi
   group_end
+  return $status
 }
 
 
 # Import secrets if any
 fly_secrets_import () {
   group "Set the fly secrets if any are set"
-  local fly_app_name = $1
-  if [ -n "${{ secrets.fly_secrets }}" ]; then
-    notice "fly_secrets=${{ secrets.fly_secrets }}"
-    echo '${{ secrets.fly_secrets }}' | tr " " "\n" | flyctl secrets import --stage --app "$fly_app_name";
+  local status=0
+  if [ -n "${WORKFLOW_SECRETS[fly_secrets]}" ]; then
+    debug "fly_secrets=${WORKFLOW_SECRETS[fly_secrets]}"
+    echo "${WORKFLOW_SECRETS[fly_secrets]}" | tr " " "\n" | flyctl secrets import --stage --app "$FLY_APP_NAME";
+    local status=$?
   else
-    warning "No secrets to import!";
+    warning "No secrets imported on $FLY_APP_NAME!";
   fi
   group_end
+  return $status
 }
 
 fly_consul_attach () {
   group "Attach a consul cluster if requested"
-  local fly_app_name = $1
+  local status=0
   # Attach a consul cluster if requested
-  if [ "${{ inputs.fly_consul_attach }}" == "true" ]; then
-    retry 5 2 "Attaching a consul cluster" flyctl consul attach --app "$fly_app_name"
+  if [[ "${WORKFLOW_INPUTS[fly_consul_attach]}" == "true" ]]; then
+    retry 5 2 "Attaching a consul cluster" flyctl consul attach --app "$FLY_APP_NAME"
+    local status=$?
   fi
   group_end
+  return $status
 }
 
 # Deploy/Update the app
 fly_deploy () {
-  local fly_app_name = $1
-  local fly_config_file_path = $2
-  local workspace_name = $3
-  local workspace_path_relative = $4
-  local git_commit_sha = $5
-  local git_commit_sha_short = $6
-
   retry 5 2 "Deploy the app to fly.io" flyctl deploy \
-    --config "$fly_config_file_path" \
-    --app "$fly_app_name" \
-    --build-arg "WORKSPACE_NAME=$workspace_name" \
-    --build-arg "WORKSPACE_PATH_RELATIVE=$workspace_path_relative" \
-    --build-arg "GIT_COMMIT_SHA=$git_commit_sha" \
-    --build-arg "GIT_COMMIT_SHA_SHORT=$git_commit_sha_short" \
+    --config "$FLY_CONFIG_FILE_PATH" \
+    --app "$FLY_APP_NAME" \
+    --build-arg "WORKSPACE_NAME=$WORKSPACE_NAME" \
+    --build-arg "WORKSPACE_PATH_RELATIVE=$WORKSPACE_PATH_RELATIVE" \
+    --build-arg "GIT_COMMIT_SHA=$GIT_COMMIT_SHA" \
+    --build-arg "GIT_COMMIT_SHA_SHORT=$GIT_COMMIT_SHA_SHORT" \
     --remote-only \
     --now \
     --yes
+  return $?
+}
 
-  app_url="https://$(flyctl status --app "$fly_app_name" --json | jq -rS '.Hostname')/"
-  return $app_url
+fly_app_url () {
+  local app_url="https://$(flyctl status --app "$FLY_APP_NAME" --json | jq -rS '.Hostname')/"
+  local status=$?
+  echo $app_url
+  return $status
 }

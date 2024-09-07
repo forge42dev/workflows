@@ -12,34 +12,5 @@ workflow_inputs=$(cat "$__dirname/inputs.json")
 workflow_secrets=$(cat "$__dirname/secrets.json")
 workflow_event=$(cat "$GITHUB_EVENT_PATH")
 
-# order is important here:
-# Make sure to load the workflow inputs and context before loading the fly_deploy.sh
 source "$__dirname/../scripts/fly_deploy.sh"
 
-echo "--- PREPARE GLOBALS"
-prepare_globals "$workflow_inputs" "$workflow_secrets" "$workflow_event"
-if [ $? -ne 0 ]; then
-  error "prepare_globals failed"
-  exit 1
-fi
-echo "--- PREPARE GLOBALS DONE"
-
-list_assoc_array WORKFLOW_INPUTS
-list_assoc_array WORKFLOW_SECRETS
-list_assoc_array WORKFLOW_EVENT
-
-echo "--- PREPARE DEPLOY VARS"
-prepare_deploy_vars
-if [ $? -ne 0 ]; then
-  error "prepare_deploy_vars failed"
-  exit 1
-fi
-echo "--- PREPARE DEPLOY VARS DONE"
-
-echo "WORKSPACE_NAME=$WORKSPACE_NAME"
-echo "WORKSPACE_PATH=$WORKSPACE_PATH"
-echo "WORKSPACE_PATH_RELATIVE=$WORKSPACE_PATH_RELATIVE"
-echo "FLY_APP_NAME=$FLY_APP_NAME"
-echo "FLY_CONFIG_FILE_PATH=$FLY_CONFIG_FILE_PATH"
-echo "GIT_COMMIT_SHA=$GIT_COMMIT_SHA"
-echo "GIT_COMMIT_SHA_SHORT=$GIT_COMMIT_SHA_SHORT"

@@ -80,9 +80,9 @@ jobs:
       name: ${{ inputs.github_environment }}
       url: ${{ steps.fly_deploy.outputs.app_url }}
     timeout-minutes: ${{ inputs.deploy_timeout_minutes }}
-    env:
+    # env:
       #LOG_LEVEL: debug
-      NO_COLOR: 1
+      # NO_COLOR: 1
     steps:
       - uses: actions/checkout@v4
         with:
@@ -96,8 +96,6 @@ jobs:
       - id: fly_deploy
         run: |
           # Deploy the app to fly.io
-          source .workflows/scripts/fly_deploy.sh
-
           echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
           echo "GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME"
           echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
@@ -109,46 +107,4 @@ jobs:
           workflow_inputs='${{ toJSON(inputs) }}'
           workflow_event="$(cat "$GITHUB_EVENT_PATH")"
 
-          echo "--- PREPARE GLOBALS"
-          prepare_globals "$workflow_inputs" "$workflow_secrets" "$workflow_event"
-          if [ $? -ne 0 ]; then
-            error "prepare_globals failed"
-            exit 1
-          fi
-          echo "--- PREPARE GLOBALS DONE"
-
-          list_assoc_array WORKFLOW_INPUTS
-          list_assoc_array WORKFLOW_SECRETS
-          list_assoc_array WORKFLOW_EVENT
-
-          echo "--- PREPARE DEPLOY VARS"
-          prepare_deploy_vars
-          if [ $? -ne 0 ]; then
-            error "prepare_deploy_vars failed"
-            exit 1
-          fi
-          echo "--- PREPARE DEPLOY VARS DONE"
-
-          echo "WORKSPACE_NAME=$WORKSPACE_NAME"
-          echo "WORKSPACE_PATH=$WORKSPACE_PATH"
-          echo "WORKSPACE_PATH_RELATIVE=$WORKSPACE_PATH_RELATIVE"
-          echo "FLY_APP_NAME=$FLY_APP_NAME"
-          echo "FLY_CONFIG_FILE_PATH=$FLY_CONFIG_FILE_PATH"
-          echo "GIT_COMMIT_SHA=$GIT_COMMIT_SHA"
-          echo "GIT_COMMIT_SHA_SHORT=$GIT_COMMIT_SHA_SHORT"
-
-          exit 0
-
-
-          ### DEPLOY scripts go here
-
-
-
-          # Set the app url as an github output
-          echo "::notice::app_url=$app_url"
-          echo "app_url=$app_url" >> $GITHUB_OUTPUT
-          echo "::endgroup::"
-
-          echo "### Deployed ${{ inputs.app_name }} :rocket:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "App URL: $app_url" >> $GITHUB_STEP_SUMMARY
+          source .workflows/scripts/fly_deploy.sh
