@@ -76,9 +76,10 @@ jobs:
     name: "${{ inputs.github_environment }}"
     runs-on: ubuntu-latest
     outputs:
-      app_name: ${{ steps.fly_deploy.outputs.app_name }}
-      app_url: ${{ steps.fly_deploy.outputs.app_url }}
-      app_normalized_name: ${{ steps.fly_deploy.outputs.app_normalized_name }}
+      fly_app_name: ${{ steps.fly_deploy.outputs.fly_app_name }}
+      fly_app_url: ${{ steps.fly_deploy.outputs.fly_app_url }}
+      workspace_name: ${{ steps.fly_deploy.outputs.workspace_name }}
+      workspace_path: ${{ steps.fly_deploy.outputs.workspace_path }}
     environment:
       name: ${{ inputs.github_environment }}
       url: ${{ steps.fly_deploy.outputs.app_url }}
