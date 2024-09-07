@@ -4,5 +4,11 @@
     "head": {
       "sha": "${GITHUB_EVENT_PULL_REQUEST_HEAD_SHA:=abcde42eee4d0b74fcae7adf4b00a08c9cd9e122}"
     }
+  },
+  "repository": {
+    "name": "${GITHUB_REPOSITORY:-a-org-42/monorepo}",
+    "owner": {
+      "name": "${GITHUB_REPOSITORY_OWNER:-a-org-42}"
+    }
   }
 }

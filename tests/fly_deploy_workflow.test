@@ -10,7 +10,7 @@ GITHUB_EVENT_PATH="${GITHUB_EVENT_PATH:-"${__dirname}/events/${GITHUB_EVENT_NAME
 
 workflow_inputs=$(cat "$__dirname/inputs.json")
 workflow_secrets=$(cat "$__dirname/secrets.json")
-workflow_event=$(cat "$GITHUB_EVENT_PATH")
+workflow_event=$(cat "$GITHUB_EVENT_PATH" | jq -rS '{number, pull_request_head_sha: .pull_request.head.sha}')
 
 source "$__dirname/../scripts/fly_deploy.sh"
 

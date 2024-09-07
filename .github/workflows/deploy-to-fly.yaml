@@ -99,15 +99,9 @@ jobs:
       - id: fly_deploy
         run: |
           # Deploy the app to fly.io
-          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
-          echo "GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME"
-          echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
-          echo "GITHUB_REF_TYPE: $GITHUB_REF_TYPE"
-          echo "GITHUB_SHA: $GITHUB_SHA"
-          echo "GITHUB EVENT PATH: $GITHUB_EVENT_PATH"
 
           workflow_secrets='${{ toJSON(secrets) }}'
           workflow_inputs='${{ toJSON(inputs) }}'
-          workflow_event="$(cat "$GITHUB_EVENT_PATH")"
+          workflow_event="$(cat "$GITHUB_EVENT_PATH" | jq -rS '{number, pull_request_head_sha: .pull_request.head.sha}')"
 
           source .workflows/scripts/fly_deploy.sh
