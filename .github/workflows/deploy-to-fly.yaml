@@ -7,15 +7,18 @@ concurrency:
 on:
   workflow_call:
     outputs:
-      app_name:
-        value: ${{ jobs.deploy.outputs.app_name }}
+      fly_app_name:
+        value: ${{ jobs.deploy.outputs.fly_app_name }}
         description: "The name of the deployed app"
-      app_url:
+      fly_app_url:
         value: ${{ jobs.deploy.outputs.app_url }}
         description: "The url of the deployed app"
-      app_normalized_name:
-        value: ${{ jobs.deploy.outputs.app_normalized_name }}
-        description: "The name of the deployed app"
+      workspace_name:
+        value: ${{ jobs.deploy.outputs.workspace_name }}
+        description: "The name of the workspace"
+      workspace_path:
+        value: ${{ jobs.deploy.outputs.workspace_path }}
+        description: "The path of the workspace"
 
     inputs:
       workspace_name:

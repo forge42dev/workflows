@@ -31,25 +31,11 @@ if [[ $? -ne 0 ]]; then
   exit 1
 fi
 
-list_assoc_array WORKFLOW_INPUTS
-list_assoc_array WORKFLOW_SECRETS
-list_assoc_array WORKFLOW_EVENT
-
 prepare_deploy_vars
 if [[ $? -ne 0 ]]; then
   error "prepare_deploy_vars failed"
   exit 1
 fi
-
-echo "WORKSPACE_NAME=$WORKSPACE_NAME"
-echo "WORKSPACE_PATH=$WORKSPACE_PATH"
-echo "WORKSPACE_PATH_RELATIVE=$WORKSPACE_PATH_RELATIVE"
-echo "FLY_ORG=$FLY_ORG"
-echo "FLY_APP_NAME=$FLY_APP_NAME"
-echo "FLY_CONSUL_ATTACH=$FLY_CONSUL_ATTACH"
-echo "FLY_CONFIG_FILE_PATH=$FLY_CONFIG_FILE_PATH"
-echo "GIT_COMMIT_SHA=$GIT_COMMIT_SHA"
-echo "GIT_COMMIT_SHA_SHORT=$GIT_COMMIT_SHA_SHORT"
 
 fly_app_create
 if [[ $? -ne 0 ]]; then
@@ -95,6 +81,11 @@ fi
 notice "app_url=$app_url"
 echo "app_url=$app_url" >> $GITHUB_OUTPUT
 group_end
+
+echo "fly_app_name=$FLY_APP_NAME" >> $GITHUB_OUTPUT
+echo "fly_app_url=$app_url" >> $GITHUB_OUTPUT
+echo "workspace_name=$WORKSPACE_NAME" >> $GITHUB_OUTPUT
+echo "workspace_path=$WORKSPACE_PATH_RELATIVE" >> $GITHUB_OUTPUT
 
 echo "### Deployed ${FLY_APP_NAME} :rocket:" >> $GITHUB_STEP_SUMMARY
 echo "" >> $GITHUB_STEP_SUMMARY

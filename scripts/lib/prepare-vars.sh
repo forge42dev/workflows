@@ -15,17 +15,17 @@ prepare_globals () {
   declare -Ag WORKFLOW_INPUTS
   json_to_assoc_array WORKFLOW_INPUTS "$1"
   declare -Arg WORKFLOW_INPUTS
-  notice "WORKFLOW_INPUTS=${#WORKFLOW_INPUTS[@]}"
+  list_assoc_array WORKFLOW_INPUTS
 
   declare -Ag WORKFLOW_SECRETS
   json_to_assoc_array WORKFLOW_SECRETS "$2"
   declare -Arg WORKFLOW_SECRETS
-  notice "WORKFLOW_SECRETS=${#WORKFLOW_SECRETS[@]}"
+  list_assoc_array WORKFLOW_SECRETS
 
   declare -Ag WORKFLOW_EVENT
   json_to_assoc_array WORKFLOW_EVENT "$3"
   declare -Arg WORKFLOW_EVENT
-  notice "WORKFLOW_EVENT=${#WORKFLOW_EVENT[@]}"
+  list_assoc_array WORKFLOW_EVENT
 
   group_end
 
