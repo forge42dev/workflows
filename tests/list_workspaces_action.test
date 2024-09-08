@@ -20,6 +20,8 @@ cleanup () {
 # Cleanup before exit
 trap 'cleanup' EXIT
 
+GITHUB_OUTPUT="${GITHUB_OUTPUT:-$(mktemp)}"
+GITHUB_STEP_SUMMARY="${GITHUB_STEP_SUMMARY:-$(mktemp)}"
 
 __dirname="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 

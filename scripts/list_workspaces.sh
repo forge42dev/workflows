@@ -20,7 +20,7 @@ prepare_workspaces_global () {
   done
 }
 
-list_deployable_workspaces () {
+prepare_deployable_workspaces () {
   for workspace in "${!WORKSPACES[@]}"; do
     local workspace_value="${WORKSPACES[$workspace]}"
     declare -ag WORKSPACES_DEPLOYABLE
@@ -35,6 +35,14 @@ list_deployable_workspaces () {
 prepare_workspaces_global
 list_assoc_array WORKSPACES
 
-list_deployable_workspaces
+prepare_deployable_workspaces
 list_assoc_array WORKSPACES_DEPLOYABLE
+
+# workspace: ["website", "@local/ui"]
+# This is the json string we need to construct for all deployable workspaces: { "include": [{"workspace": "website"},{"workspace": "@local/ui"}] }
+# Convert the array to the required JSON format
+json_array=$(printf '%s\n' "${WORKSPACES_DEPLOYABLE[@]}" | jq -Rsc 'split("\n")[:-1] | map({workspace: .})')
+
+# This is the json string we need to construct for all deployable workspaces: { "include": [{"workspace": "website"},{"workspace": "@local/ui"}] }
+echo "deployable_workspaces='{\"include\":$json_array}'" >> $GITHUB_OUTPUT
 

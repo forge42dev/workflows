@@ -5,10 +5,10 @@ inputs:
     description: "Who to greet"
     required: true
     default: "World"
-# outputs:
-#   random-number:
-#     description: "Random number"
-#     value: ${{ steps.random-number-generator.outputs.random-number }}
+outputs:
+  deployable_workspaces:
+    description: "The deployable workspaces"
+    value: ${{ steps.list_workspaces.outputs.deployable_workspaces }}
 runs:
   using: "composite"
   steps:
@@ -17,5 +17,6 @@ runs:
       shell: bash
       env:
         GITHUB_ACTION_PATH: ${{ github.action_path }}
-    - run: list_workspaces.sh
+    - id: list_workspaces
+      run: list_workspaces.sh
       shell: bash
