@@ -6,10 +6,6 @@ source "$__dirname/lib/prepare-vars.sh"
 source "$__dirname/lib/retry.sh"
 source "$__dirname/lib/fly.sh"
 
-ls -la "$GITHUB_ACTION_PATH"
-ls -ls "$GITHUB_PATH"
-
-
 # Enable globstar to allow ** globs which is needed in this function
 shopt -s globstar
 

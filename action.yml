@@ -12,5 +12,10 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: source ${{ github.action_path }}/scripts/list_workspaces.sh
+    - name: Set GitHub Path
+      run: echo "$GITHUB_ACTION_PATH" >> $GITHUB_PATH
+      shell: bash
+      env:
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+    - run: list_workspaces.sh
       shell: bash
