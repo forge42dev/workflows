@@ -10,12 +10,14 @@ if [[ -z "$workflow_inputs" || -z "$workflow_secrets" || -z "$workflow_event" ]]
 fi
 
 prepare_globals "$workflow_inputs" "$workflow_secrets" "$workflow_event"
+# Some sanity checks, if any of the INPUT or EVENT variables are empty, we exit with an error, since we can't proceed.
 if [[ ${#WORKFLOW_INPUTS[@]} -eq 0 || ${#WORKFLOW_EVENT[@]} -eq 0 ]]; then
   error "Something went wrong preparing the workflow inputs, or event."
   exit 1
 fi
 
 prepare_deploy_vars
+# Again, some sanity checks. If those variables are empty, we exit with an error, since we can't proceed.
 if [[ -z "$WORKSPACE_NAME" || -z "$WORKSPACE_PATH_RELATIVE" || -z "$FLY_APP_NAME" || -z "$FLY_CONFIG_FILE_PATH" || -z "$GIT_COMMIT_SHA" || -z "$GIT_COMMIT_SHA_SHORT" ]]; then
   error "Something went wrong preparing the necessary deploy variables."
   exit 1

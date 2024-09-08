@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+DEBUG=${DEBUG:-}
+
+# Debug mode: Show commands and no unbound variables
+if [ -n "$DEBUG" ]; then
+  set -xu -eE -o pipefail
+else
+  # Exit on any failure
+  set -eE -o pipefail
+fi
+
+# Handle errors
+# trap 'echo >&2 "Error: exited with status $?"' ERR
+
+cleanup () {
+  echo "GITHUB_OUTPUT=$GITHUB_OUTPUT"
+  echo "GITHUB_STEP_SUMMARY=$GITHUB_STEP_SUMMARY"
+}
+
+# Cleanup before exit
+trap 'cleanup' EXIT
+
+
+__dirname="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+source "$__dirname/../scripts/list_workspaces.sh"

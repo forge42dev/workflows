@@ -21,7 +21,7 @@ cleanup () {
 trap 'cleanup' EXIT
 
 __dirname="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-declare -rg GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-a-org-42/monorepo}"
+declare -rg GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-forge42dev/test}"
 declare -rg GITHUB_EVENT_NAME="${GITHUB_EVENT_NAME:-pull_request}"
 declare -rg GITHUB_REF_NAME="${GITHUB_REF_NAME:-feature/foo-bar}"
 declare -rg GITHUB_REF_TYPE="${GITHUB_REF_TYPE:-branch}"
@@ -33,5 +33,3 @@ declare -g GITHUB_STEP_SUMMARY="${GITHUB_STEP_SUMMARY:-$(mktemp)}"
 declare -rg workflow_inputs="$(cat "$__dirname/inputs.json")"
 declare -rg workflow_secrets="$(cat "$__dirname/secrets.json")"
 declare -rg workflow_event="$(cat "$GITHUB_EVENT_PATH" | jq -rS '{number, pull_request_head_sha: .pull_request.head.sha}')"
-
-source "$__dirname/../scripts/fly_deploy.sh"
