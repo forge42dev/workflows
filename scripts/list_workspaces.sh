@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 __dirname="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 source "$__dirname/lib/helper.sh"
 source "$__dirname/lib/prepare-vars.sh"
