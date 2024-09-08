@@ -1,16 +1,37 @@
 #!/usr/bin/env bash
+DEBUG=${DEBUG:-}
+
+# Debug mode: Show commands and no unbound variables
+if [ -n "$DEBUG" ]; then
+  set -xu -eE -o pipefail
+else
+  # Exit on any failure
+  set -eE -o pipefail
+fi
+
+# Handle errors
+# trap 'echo >&2 "Error: exited with status $?"' ERR
+
+cleanup () {
+  echo "GITHUB_OUTPUT=$GITHUB_OUTPUT"
+  echo "GITHUB_STEP_SUMMARY=$GITHUB_STEP_SUMMARY"
+}
+
+# Cleanup before exit
+trap 'cleanup' EXIT
+
 __dirname="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+declare -rg GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-a-org-42/monorepo}"
+declare -rg GITHUB_EVENT_NAME="${GITHUB_EVENT_NAME:-pull_request}"
+declare -rg GITHUB_REF_NAME="${GITHUB_REF_NAME:-feature/foo-bar}"
+declare -rg GITHUB_REF_TYPE="${GITHUB_REF_TYPE:-branch}"
+declare -rg GITHUB_SHA="${GITHUB_SHA:-abcde42eee4d0b74fcae7adf4b00a08c9cd9e122}"
+declare -rg GITHUB_EVENT_PATH="${GITHUB_EVENT_PATH:-"${__dirname}/events/${GITHUB_EVENT_NAME}.json"}"
+declare -g GITHUB_OUTPUT="${GITHUB_OUTPUT:-$(mktemp)}"
+declare -g GITHUB_STEP_SUMMARY="${GITHUB_STEP_SUMMARY:-$(mktemp)}"
 
-GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-a-org-42/monorepo}"
-GITHUB_EVENT_NAME="${GITHUB_EVENT_NAME:-pull_request}"
-GITHUB_REF_NAME="${GITHUB_REF_NAME:-feature/foo-bar}"
-GITHUB_REF_TYPE="${GITHUB_REF_TYPE:-branch}"
-GITHUB_SHA="${GITHUB_SHA:-abcde42eee4d0b74fcae7adf4b00a08c9cd9e122}"
-GITHUB_EVENT_PATH="${GITHUB_EVENT_PATH:-"${__dirname}/events/${GITHUB_EVENT_NAME}.json"}"
-
-workflow_inputs=$(cat "$__dirname/inputs.json")
-workflow_secrets=$(cat "$__dirname/secrets.json")
-workflow_event=$(cat "$GITHUB_EVENT_PATH" | jq -rS '{number, pull_request_head_sha: .pull_request.head.sha}')
+declare -rg workflow_inputs="$(cat "$__dirname/inputs.json")"
+declare -rg workflow_secrets="$(cat "$__dirname/secrets.json")"
+declare -rg workflow_event="$(cat "$GITHUB_EVENT_PATH" | jq -rS '{number, pull_request_head_sha: .pull_request.head.sha}')"
 
 source "$__dirname/../scripts/fly_deploy.sh"
-

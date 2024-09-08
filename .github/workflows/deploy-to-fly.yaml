@@ -11,7 +11,7 @@ on:
         value: ${{ jobs.deploy.outputs.fly_app_name }}
         description: "The name of the deployed app"
       fly_app_url:
-        value: ${{ jobs.deploy.outputs.app_url }}
+        value: ${{ jobs.deploy.outputs.fly_app_url }}
         description: "The url of the deployed app"
       workspace_name:
         value: ${{ jobs.deploy.outputs.workspace_name }}
@@ -84,9 +84,6 @@ jobs:
       name: ${{ inputs.github_environment }}
       url: ${{ steps.fly_deploy.outputs.app_url }}
     timeout-minutes: ${{ inputs.deploy_timeout_minutes }}
-    # env:
-      #LOG_LEVEL: debug
-      # NO_COLOR: 1
     steps:
       - uses: actions/checkout@v4
         with:
@@ -100,9 +97,17 @@ jobs:
       - id: fly_deploy
         run: |
           # Deploy the app to fly.io
+          DEBUG=${DEBUG:-}
 
-          workflow_secrets='${{ toJSON(secrets) }}'
-          workflow_inputs='${{ toJSON(inputs) }}'
-          workflow_event="$(cat "$GITHUB_EVENT_PATH" | jq -rS '{number, pull_request_head_sha: .pull_request.head.sha}')"
+          # Debug mode: Show commands and no unbound variables
+          if [ -n "$DEBUG" ]; then
+            set -xu -eE -o pipefail
+          else
+            # Exit on any failure
+            set -eE -o pipefail
+          fi
 
+          declare -rg workflow_secrets='${{ toJSON(secrets) }}'
+          declare -rg workflow_inputs='${{ toJSON(inputs) }}'
+          declare -rg workflow_event="$(cat "$GITHUB_EVENT_PATH" | jq -rS '{number, pull_request_head_sha: .pull_request.head.sha}')"
           source .workflows/scripts/fly_deploy.sh
