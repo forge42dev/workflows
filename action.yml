@@ -12,5 +12,5 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: source ./scripts/list_workspaces.sh
+    - run: source ${{ github.action_path }}/scripts/list_workspaces.sh
       shell: bash
