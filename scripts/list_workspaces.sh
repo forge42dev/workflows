@@ -44,5 +44,5 @@ list_assoc_array WORKSPACES_DEPLOYABLE
 json_array=$(printf '%s\n' "${WORKSPACES_DEPLOYABLE[@]}" | jq -Rsc 'split("\n")[:-1] | map({workspace: .})')
 
 # This is the json string we need to construct for all deployable workspaces: { "include": [{"workspace": "website"},{"workspace": "@local/ui"}] }
-echo "deployable_workspaces='{\"include\":$json_array}'" >> $GITHUB_OUTPUT
+echo "deployable_workspaces={\"include\":$json_array}" >> $GITHUB_OUTPUT
 
