@@ -13,7 +13,10 @@ runs:
   using: "composite"
   steps:
     - name: Set GitHub Path
-      run: echo "$GITHUB_ACTION_PATH" >> $GITHUB_PATH
+      run: |
+        echo "$GITHUB_ACTION_PATH" >> $GITHUB_PATH
+        ls -la "$GITHUB_ACTION_PATH"
+        ls -ls "$GITHUB_PATH"
       shell: bash
       env:
         GITHUB_ACTION_PATH: ${{ github.action_path }}
