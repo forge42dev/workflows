@@ -3,5 +3,5 @@
   "fly_app_name": "${FLY_APP_NAME:-}",
   "fly_config_file_path": "${FLY_CONFIG_FILE_PATH:-./fly.staging.toml}",
   "fly_org": "${FLY_ORG:-forge-42}",
-  "fly_consul_attach": false
+  "fly_consul_attach": true
 }
