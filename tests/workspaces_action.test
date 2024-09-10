@@ -30,9 +30,9 @@ __dirname="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 source "$__dirname/../scripts/workspaces.sh"
 
 if [[ -n "$workspace_filter_key" ]]; then
-  workspace_matrix_filtered="$(filter_workspaces "$workspace_filter_key")"
+  workspaces_filtered="$(filter_workspaces "$workspace_filter_key")"
 else
-  workspace_matrix_filtered="{\"include\":[]}"
+  workspaces_filtered="{\"include\":[]}"
 fi
-echo "workspace_matrix_filtered=$workspace_matrix_filtered"
-echo "workspace_matrix_filtered=$workspace_matrix_filtered" >> $GITHUB_OUTPUT
+echo "workspaces_filtered=$workspaces_filtered"
+echo "workspaces_filtered=$workspaces_filtered" >> $GITHUB_OUTPUT

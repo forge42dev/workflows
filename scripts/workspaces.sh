@@ -38,7 +38,7 @@ filter_workspaces () {
   prepare_filtered_workspaces WORKSPACES WORKSPACES_FILTERED $1
   # This is the json string we need to construct for all deployable workspaces: { "include": [{"workspace": "website"},{"workspace": "@local/ui"}] }
   # Convert the array to the required JSON format
-  echo "{\"include\":$(printf '%s\n' "${WORKSPACES_FILTERED[@]}" | jq -Rsc 'split("\n")[:-1] | map({workspace: .})')}"
+  echo "$(printf '%s\n' "${WORKSPACES_FILTERED[@]}" | jq -Rsc 'split("\n")[:-1]')"
 }
 
 declare -Ag WORKSPACES

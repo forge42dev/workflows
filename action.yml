@@ -5,9 +5,9 @@ inputs:
     description: "The key to filter the workspaces by"
     required: false
 outputs:
-  workspace_matrix_filtered:
-    description: "The filteredworkspaces"
-    value: ${{ steps.workspaces.outputs.workspace_matrix_filtered }}
+  workspaces_filtered:
+    description: "The filtered workspaces as json array. Use fromJSON in your github workflow."
+    value: ${{ steps.workspaces.outputs.workspaces_filtered }}
 runs:
   using: "composite"
   steps:
@@ -21,10 +21,10 @@ runs:
         source ${{ github.action_path }}/scripts/workspaces.sh
         workspace_filter_key="${{ inputs.workspace_filter_key }}"
         if [[ -n "$workspace_filter_key" ]]; then
-          workspace_matrix_filtered="$(filter_workspaces "$workspace_filter_key")"
+          workspaces_filtered="$(filter_workspaces "$workspace_filter_key")"
         else
-          workspace_matrix_filtered="{\"include\":[]}"
+          workspaces_filtered="[]"
         fi
-        echo "workspace_matrix_filtered=$workspace_matrix_filtered"
-        echo "workspace_matrix_filtered=$workspace_matrix_filtered" >> $GITHUB_OUTPUT
+        echo "workspaces_filtered=$workspaces_filtered"
+        echo "workspaces_filtered=$workspaces_filtered" >> $GITHUB_OUTPUT
       shell: bash
