@@ -23,6 +23,16 @@ trap 'cleanup' EXIT
 GITHUB_OUTPUT="${GITHUB_OUTPUT:-$(mktemp)}"
 GITHUB_STEP_SUMMARY="${GITHUB_STEP_SUMMARY:-$(mktemp)}"
 
+workspace_filter_key="${1:-}"
+
 __dirname="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
-source "$__dirname/../scripts/list_workspaces.sh"
+source "$__dirname/../scripts/workspaces.sh"
+
+if [[ -n "$workspace_filter_key" ]]; then
+  workspace_matrix_filtered="$(filter_workspaces "$workspace_filter_key")"
+else
+  workspace_matrix_filtered="{\"include\":[]}"
+fi
+echo "workspace_matrix_filtered=$workspace_matrix_filtered"
+echo "workspace_matrix_filtered=$workspace_matrix_filtered" >> $GITHUB_OUTPUT

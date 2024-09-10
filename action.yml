@@ -1,14 +1,13 @@
-name: "Deployable Workspaces"
-description: "Get all deployable workspaces found in the monorepo"
+name: "Workspaces Helper"
+description: "Get all kinds of information about the workspaces found in the monorepo"
 inputs:
-  who-to-greet: # id of input
-    description: "Who to greet"
-    required: true
-    default: "World"
+  workspace_filter_key:
+    description: "The key to filter the workspaces by"
+    required: false
 outputs:
-  deployable_workspaces:
-    description: "The deployable workspaces"
-    value: ${{ steps.list_workspaces.outputs.deployable_workspaces }}
+  workspace_matrix_filtered:
+    description: "The filteredworkspaces"
+    value: ${{ steps.workspaces.outputs.workspace_matrix_filtered }}
 runs:
   using: "composite"
   steps:
@@ -17,6 +16,15 @@ runs:
       shell: bash
       env:
         GITHUB_ACTION_PATH: ${{ github.action_path }}
-    - id: list_workspaces
-      run: list_workspaces.sh
+    - id: workspaces
+      run: |
+        source ${{ github.action_path }}/scripts/workspaces.sh
+        workspace_filter_key="${{ inputs.workspace_filter_key }}"
+        if [[ -n "$workspace_filter_key" ]]; then
+          workspace_matrix_filtered="$(filter_workspaces "$workspace_filter_key")"
+        else
+          workspace_matrix_filtered="{\"include\":[]}"
+        fi
+        echo "workspace_matrix_filtered=$workspace_matrix_filtered"
+        echo "workspace_matrix_filtered=$workspace_matrix_filtered" >> $GITHUB_OUTPUT
       shell: bash

@@ -11,7 +11,7 @@ list_assoc_array () {
   echo "$1 (${#assoc_array_ref[@]}):"
   for key in "${!assoc_array_ref[@]}"
   do
-    echo -e "\t$key: '${assoc_array_ref[$key]}'"
+    echo -e "  $key: '${assoc_array_ref[$key]}'"
   done
 }
 
