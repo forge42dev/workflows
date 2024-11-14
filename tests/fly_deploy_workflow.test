@@ -21,9 +21,9 @@ cleanup () {
 trap 'cleanup' EXIT
 
 __dirname="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-declare -rg GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-forge42dev/test}"
+declare -rg GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-forge42dev/Remix-Dev-Tools}"
 declare -rg GITHUB_EVENT_NAME="${GITHUB_EVENT_NAME:-pull_request}"
-declare -rg GITHUB_REF_NAME="${GITHUB_REF_NAME:-feature/foo-bar}"
+declare -rg GITHUB_REF_NAME="${GITHUB_REF_NAME:-rr7}"
 declare -rg GITHUB_REF_TYPE="${GITHUB_REF_TYPE:-branch}"
 declare -rg GITHUB_SHA="${GITHUB_SHA:-abcde42eee4d0b74fcae7adf4b00a08c9cd9e122}"
 declare -rg GITHUB_EVENT_PATH="${GITHUB_EVENT_PATH:-"${__dirname}/events/${GITHUB_EVENT_NAME}.json"}"

@@ -107,10 +107,15 @@ prepare_deploy_vars () {
   fi
 
   if [[ -z "${WORKFLOW_INPUTS[fly_consul_attach]}" ]]; then
-    error "fly_consul_attach is not set. Please set 'fly_consul_attach' as input."
-    return 1
+    local fly_consul_attach="false"
   else
-    local fly_consul_attach="${WORKFLOW_INPUTS[fly_consul_attach]}"
+    local fly_consul_attach="${WORKFLOW_INPUTS[fly_consul_attach],,}"
+  fi
+
+  if [[ -z "${WORKFLOW_INPUTS[set_cwd_to_workspace]}" ]]; then
+    local set_cwd_to_workspace="false"
+  else
+    local set_cwd_to_workspace="${WORKFLOW_INPUTS[set_cwd_to_workspace],,}"
   fi
 
   # Disable globstar again to avoid problems with the ** glob
@@ -122,6 +127,7 @@ prepare_deploy_vars () {
   declare -rg FLY_ORG="$fly_org"
   declare -rg FLY_APP_NAME="$fly_app_name"
   declare -rg FLY_CONSUL_ATTACH="$fly_consul_attach"
+  declare -rg SET_CWD_TO_WORKSPACE="$set_cwd_to_workspace"
   declare -rg FLY_CONFIG_FILE_PATH="$fly_config_file_path"
   declare -rg GIT_COMMIT_SHA="$git_commit_sha"
   declare -rg GIT_COMMIT_SHA_SHORT="$git_commit_sha_short"
@@ -129,7 +135,10 @@ prepare_deploy_vars () {
   notice "WORKSPACE_NAME=$WORKSPACE_NAME"
   notice "WORKSPACE_PATH=$WORKSPACE_PATH"
   notice "WORKSPACE_PATH_RELATIVE=$WORKSPACE_PATH_RELATIVE"
+  notice "FLY_ORG=$FLY_ORG"
   notice "FLY_APP_NAME=$FLY_APP_NAME"
+  notice "FLY_CONSUL_ATTACH=$FLY_CONSUL_ATTACH"
+  notice "SET_CWD_TO_WORKSPACE=$SET_CWD_TO_WORKSPACE"
   notice "FLY_CONFIG_FILE_PATH=$FLY_CONFIG_FILE_PATH"
   notice "GIT_COMMIT_SHA=$GIT_COMMIT_SHA"
   notice "GIT_COMMIT_SHA_SHORT=$GIT_COMMIT_SHA_SHORT"

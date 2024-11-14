@@ -25,6 +25,11 @@ on:
         required: false
         type: string
         description: "The name of the workspace to deploy. This is used to find the folder of the workspace by searching name fields in all package.json files."
+      set_cwd_to_workspace:
+        required: false
+        type: boolean
+        description: "Whether to set the current working directory to the workspace path. Defaults to false. You only need this if you want to deploy a folder in isolation and dont need any of the other workspaces. For monorepos, this should usually be false."
+        default: false
       fly_app_name:
         required: false
         type: string

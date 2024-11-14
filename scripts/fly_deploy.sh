@@ -18,7 +18,7 @@ fi
 
 prepare_deploy_vars
 # Again, some sanity checks. If those variables are empty, we exit with an error, since we can't proceed.
-if [[ -z "$WORKSPACE_NAME" || -z "$WORKSPACE_PATH_RELATIVE" || -z "$FLY_APP_NAME" || -z "$FLY_CONFIG_FILE_PATH" || -z "$GIT_COMMIT_SHA" || -z "$GIT_COMMIT_SHA_SHORT" ]]; then
+if [[ -z "$WORKSPACE_NAME" || -z "$WORKSPACE_PATH_RELATIVE" || -z "$FLY_APP_NAME" || -z "$FLY_CONFIG_FILE_PATH" || -z "$GIT_COMMIT_SHA" || -z "$GIT_COMMIT_SHA_SHORT" || -z "$FLY_CONSUL_ATTACH" || -z "$SET_CWD_TO_WORKSPACE" ]]; then
   error "Something went wrong preparing the necessary deploy variables."
   exit 1
 fi
@@ -39,8 +39,13 @@ else
 fi
 
 # Attach a consul cluster if requested
-if [[ "${WORKFLOW_INPUTS[fly_consul_attach]}" == "true" ]]; then
+if [[ "$FLY_CONSUL_ATTACH" == "true" ]]; then
   retry 5 2 "Attaching a consul cluster to $FLY_APP_NAME" flyctl consul attach --app "$FLY_APP_NAME"
+fi
+
+if [[ "$SET_CWD_TO_WORKSPACE" == "true" ]]; then
+  notice "Setting current working directory to '$WORKSPACE_PATH_RELATIVE' (effectively: '$WORKSPACE_PATH')"
+  cd "$WORKSPACE_PATH"
 fi
 
 # Deploy the app to fly.io
