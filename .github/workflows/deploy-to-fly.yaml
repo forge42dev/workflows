@@ -112,5 +112,5 @@ jobs:
 
           declare -rg workflow_secrets='${{ toJSON(secrets) }}'
           declare -rg workflow_inputs='${{ toJSON(inputs) }}'
-          declare -rg workflow_event="$(cat "$GITHUB_EVENT_PATH" | jq -rS '{number, pull_request_head_sha: .pull_request.head.sha}')"
+          declare -rg workflow_event="$(cat "$GITHUB_EVENT_PATH")"
           source .workflows/scripts/fly_deploy.sh
