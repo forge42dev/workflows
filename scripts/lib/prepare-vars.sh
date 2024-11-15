@@ -58,12 +58,18 @@ prepare_deploy_vars () {
   debug "workspace_path=$workspace_path"
   debug "workspace_path_relative=$workspace_path_relative"
 
+  debug "GITHUB_EVENT_NAME=$GITHUB_EVENT_NAME"
+  debug "GITHUB_REF_TYPE=$GITHUB_REF_TYPE"
+  debug "GITHUB_REF_NAME=$GITHUB_REF_NAME"
+
   if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
     local default_fly_app_name="${GITHUB_REPOSITORY}-${workspace_name}-pr${WORKFLOW_EVENT[number]}"
   elif [[ "${GITHUB_EVENT_NAME}" == "push" || "${GITHUB_EVENT_NAME}" == "create" ]]; then
     local default_fly_app_name="${GITHUB_REPOSITORY}-${workspace_name}-${GITHUB_REF_TYPE}-${GITHUB_REF_NAME}"
+  else
+    warning "Unhandled GITHUB_EVENT_NAME '${GITHUB_EVENT_NAME}'. Considering setting 'fly_app_name' as input."
+    local default_fly_app_name="${GITHUB_REPOSITORY}-${workspace_name}-${GITHUB_EVENT_NAME}"
   fi
-
   debug "default_fly_app_name=$default_fly_app_name"
 
   local raw_fly_app_name="${WORKFLOW_INPUTS[fly_app_name]:-$default_fly_app_name}"
