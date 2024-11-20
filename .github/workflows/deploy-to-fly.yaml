@@ -118,7 +118,7 @@ jobs:
             declare -rg workflow_event="$(cat "$GITHUB_EVENT_PATH" | jq -rS '{number, pull_request_head_sha: .pull_request.head.sha}')"
           else
             # If we need something else, we can add it here
-            declare -rf workflow_event=""
+            declare -rg workflow_event="{}"
           fi
 
           source .workflows/scripts/fly_deploy.sh
