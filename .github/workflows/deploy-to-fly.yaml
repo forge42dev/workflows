@@ -112,7 +112,18 @@ jobs:
             set -eE -o pipefail
           fi
 
+          echo "GITHUB_EVEN_NAME=$GITHUB_EVENT_NAME"
+          echo "GITHUB_EVENT_PATH=$GITHUB_EVENT_PATH"
+
           declare -rg workflow_secrets='${{ toJSON(secrets) }}'
           declare -rg workflow_inputs='${{ toJSON(inputs) }}'
-          declare -rg workflow_event="$(cat "$GITHUB_EVENT_PATH" | jq -rS '{number, pull_request_head_sha: .pull_request.head.sha}')"
+
+          # For now we only need special handling for pull requests and need event data for that
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            declare -rg workflow_event="$(cat "$GITHUB_EVENT_PATH" | jq -rS '{number, pull_request_head_sha: .pull_request.head.sha}')"
+          else
+            # If we need something else, we can add it here
+            declare -rg workflow_event="{}"
+          fi
+
           source .workflows/scripts/fly_deploy.sh

@@ -10,8 +10,8 @@ if [[ -z "$workflow_inputs" || -z "$workflow_secrets" || -z "$workflow_event" ]]
 fi
 
 prepare_globals "$workflow_inputs" "$workflow_secrets" "$workflow_event"
-# Some sanity checks, if any of the INPUT or EVENT variables are empty, we exit with an error, since we can't proceed.
-if [[ ${#WORKFLOW_INPUTS[@]} -eq 0 || ${#WORKFLOW_EVENT[@]} -eq 0 ]]; then
+# Some sanity checks, if any of the INPUT variables are empty, we exit with an error, since we can't proceed.
+if [[ ${#WORKFLOW_INPUTS[@]} -eq 0 ]]; then
   error "Something went wrong preparing the workflow inputs, or event."
   exit 1
 fi
@@ -39,7 +39,7 @@ else
 fi
 
 # Attach a consul cluster if requested
-if [[ "$FLY_CONSUL_ATTACH" == "true" ]]; then
+if [[ "${WORKFLOW_INPUTS[fly_consul_attach]}" == "true" ]]; then
   retry 5 2 "Attaching a consul cluster to $FLY_APP_NAME" flyctl consul attach --app "$FLY_APP_NAME"
 fi
 
